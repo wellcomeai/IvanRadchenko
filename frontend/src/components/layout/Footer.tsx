@@ -3,12 +3,11 @@ import Image from "next/image";
 
 const columns = [
   {
-    title: "Продукт",
+    title: "Обучение",
     links: [
-      { label: "Как начать", href: "/#how-to-start" },
-      { label: "Наставник", href: "/#mentor" },
-      { label: "Примеры", href: "/#examples" },
-      { label: "Курс", href: "/#course" },
+      { label: "Программа курса", href: "/#program" },
+      { label: "Как проходит обучение", href: "/#how" },
+      { label: "Для кого", href: "/#for-whom" },
     ],
   },
   {
@@ -18,42 +17,32 @@ const columns = [
       { label: "Регистрация", href: "/register" },
     ],
   },
-  {
-    title: "Open source",
-    links: [
-      { label: "GitHub", href: "https://github.com/SturtapHab/OpenSaas" },
-      { label: "Skills для агентов", href: "https://github.com/SturtapHab/OpenSaas/tree/main/.claude/skills" },
-      { label: "Автор шаблона", href: "https://t.me/wellcome_ai" },
-    ],
-  },
 ];
 
 export function Footer() {
   return (
-    <footer style={{ background: "linear-gradient(180deg, #f8f6f1 0, #f0ece3 240px)", color: "#16140f", fontFamily: "Onest, Geist, sans-serif" }}>
-      <div className="mx-auto px-6 pt-28 pb-10" style={{ maxWidth: 1180 }}>
-        <div className="grid md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-12 mb-20">
+    <footer style={{ background: "linear-gradient(180deg, #f5f6f8 0, #eceff4 240px)", color: "#0f1e3d", fontFamily: "Onest, Geist, sans-serif" }}>
+      <div className="mx-auto px-6 pt-24 pb-10" style={{ maxWidth: 1180 }}>
+        <div className="grid md:grid-cols-[1.6fr_1fr_1fr] gap-12 mb-16">
           <div>
-            <Link href="/" className="inline-flex items-center gap-2.5 mb-5 no-underline">
-              <Image src="/logo.png" alt="OpenSaaS" width={30} height={30} style={{ borderRadius: 8 }} />
-              <span className="text-[16px] font-medium tracking-tight text-[#16140f]" style={{ fontFamily: "Unbounded, sans-serif" }}>OpenSaaS</span>
+            <Link href="/" className="inline-flex items-center gap-3 mb-5 no-underline">
+              <Image src="/logo.png" alt="" width={44} height={44} />
+              <span className="text-[18px] font-semibold leading-tight text-[#0f1e3d]" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                Школа <span className="text-[#a8861c]">Независимости</span>
+              </span>
             </Link>
-            <p className="text-[14.5px] leading-relaxed text-[#4a463e] max-w-[300px]">
-              Открытый шаблон для запуска своего онлайн-бизнеса. Деплой и обучение — через AI-агента.
+            <p className="text-[14.5px] leading-relaxed text-[#3b4a66] max-w-[320px]">
+              Онлайн-школа финансовой грамотности: от личного бюджета до собственной стратегии финансовой независимости.
             </p>
           </div>
 
           {columns.map((col) => (
             <div key={col.title}>
-              <div className="text-[12px] font-semibold tracking-[0.16em] uppercase text-[#857f73] mb-5">{col.title}</div>
+              <div className="text-[12px] font-semibold tracking-[0.16em] uppercase text-[#6b7894] mb-5">{col.title}</div>
               <ul className="flex flex-col gap-3 list-none m-0 p-0">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      {...(link.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                      className="text-[15px] text-[#16140f] no-underline opacity-80 hover:opacity-100 transition-opacity"
-                    >
+                    <Link href={link.href} className="text-[15px] text-[#0f1e3d] no-underline opacity-80 hover:opacity-100 transition-opacity">
                       {link.label}
                     </Link>
                   </li>
@@ -63,18 +52,9 @@ export function Footer() {
           ))}
         </div>
 
-        {/* Крупный знак бренда */}
-        <div
-          aria-hidden
-          className="select-none text-center leading-none"
-          style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 600, fontSize: "clamp(3rem, 12.5vw, 11rem)", letterSpacing: "-0.05em", color: "transparent", WebkitTextStroke: "1px rgba(22,20,15,0.18)" }}
-        >
-          OpenSaaS
-        </div>
-
-        <div className="mt-8 pt-6 flex flex-wrap items-center justify-between gap-3 text-[13px] text-[#857f73]" style={{ borderTop: "1px solid rgba(22,20,15,0.08)" }}>
-          <span>© {new Date().getFullYear()} OpenSaaS · Открытый код под лицензией MIT</span>
-          <span>Сделано с Claude Code</span>
+        <div className="pt-6 flex flex-wrap items-center justify-between gap-3 text-[13px] text-[#6b7894]" style={{ borderTop: "1px solid rgba(15,30,61,0.08)" }}>
+          <span>© {new Date().getFullYear()} Школа Независимости</span>
+          <span>Материалы курса носят образовательный характер и не являются индивидуальной инвестиционной рекомендацией.</span>
         </div>
       </div>
     </footer>

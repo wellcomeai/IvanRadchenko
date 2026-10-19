@@ -23,7 +23,7 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        "rounded-[28px] border border-border bg-card px-6 py-8 shadow-[0_1px_2px_rgba(22,20,15,.04),0_28px_56px_-32px_rgba(22,20,15,.22)] sm:px-9 sm:py-10",
+        "rounded-[28px] border border-border bg-card px-6 py-8 shadow-[0_1px_2px_rgba(15,30,61,.04),0_28px_56px_-32px_rgba(15,30,61,.22)] sm:px-9 sm:py-10",
         className,
       )}
     >

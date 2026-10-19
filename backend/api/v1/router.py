@@ -8,6 +8,7 @@ from api.v1.internal import (
     api_keys as api_keys_router,
     auth as auth_router,
     billing as billing_router,
+    course as course_router,
     referrals as referrals_router,
     users as users_router,
 )
@@ -22,6 +23,8 @@ api_router.include_router(billing_router.router)
 api_router.include_router(referrals_router.router)
 api_router.include_router(api_keys_router.router)
 api_router.include_router(admin_router.router)
+api_router.include_router(course_router.router)
+api_router.include_router(course_router.admin_router)
 
 # Public (API key)
 api_router.include_router(public_me_router.router)

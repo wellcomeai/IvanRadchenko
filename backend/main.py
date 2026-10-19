@@ -1,4 +1,4 @@
-"""FastAPI приложение OpenSaaS."""
+"""FastAPI приложение «Школа Независимости» (на основе OpenSaaS)."""
 from __future__ import annotations
 
 import logging
@@ -25,6 +25,14 @@ async def lifespan(app: FastAPI):
         logger.info("Redis enabled: %s", settings.redis_url)
     else:
         logger.info("Redis disabled — using PostgreSQL fallback for rate limiting")
+    if settings.storage_enabled:
+        from starlette.concurrency import run_in_threadpool
+
+        from modules.course import storage
+
+        await run_in_threadpool(storage.ensure_cors)
+    else:
+        logger.info("S3 storage disabled — course materials upload unavailable")
     yield
     logger.info("Shutting down")
 
@@ -34,7 +42,7 @@ _is_production = settings.environment.lower() == "production"
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
-    description="OpenSaaS — open source SaaS boilerplate",
+    description="Онлайн-школа финансовой грамотности",
     lifespan=lifespan,
     docs_url=None if _is_production else "/docs",
     redoc_url=None if _is_production else "/redoc",

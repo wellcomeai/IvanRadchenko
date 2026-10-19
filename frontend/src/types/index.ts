@@ -133,3 +133,68 @@ export interface ReferralUser {
   status: "registered" | "trial" | "converted";
   created_at: string;
 }
+
+// ---------- Курс ----------
+
+export type MaterialKind = "video" | "file";
+
+export interface LessonMaterial {
+  id: UUID;
+  kind: MaterialKind;
+  title: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  is_uploaded: boolean;
+  position: number;
+  created_at: string;
+  /** Временная ссылка на просмотр или скачивание. */
+  url: string | null;
+}
+
+export interface LessonBrief {
+  id: UUID;
+  module_id: UUID;
+  title: string;
+  position: number;
+  is_published: boolean;
+  has_video: boolean;
+}
+
+export interface Lesson extends LessonBrief {
+  description: string;
+  created_at: string;
+  updated_at: string;
+  materials: LessonMaterial[];
+}
+
+export interface LessonView extends Lesson {
+  module_title: string;
+  module_position: number;
+  prev_lesson_id: UUID | null;
+  next_lesson_id: UUID | null;
+}
+
+export interface CourseModule {
+  id: UUID;
+  position: number;
+  title: string;
+  description: string;
+  lessons: LessonBrief[];
+}
+
+export interface AdminCourseModule extends Omit<CourseModule, "lessons"> {
+  lessons: Lesson[];
+}
+
+export interface ProgramModule {
+  position: number;
+  title: string;
+  description: string;
+  lesson_count: number;
+}
+
+export interface StorageStatus {
+  enabled: boolean;
+  bucket: string | null;
+}

@@ -11,17 +11,19 @@ export default function AuthLayout({
       {/* Фон как на лендинге: тонкая сетка и тёплое свечение сверху */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(22,20,15,.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(22,20,15,.05)_1px,transparent_1px)] [background-size:72px_72px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,#000_30%,transparent_100%)]"
+        className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(15,30,61,.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,30,61,.05)_1px,transparent_1px)] [background-size:72px_72px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,#000_30%,transparent_100%)]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[-240px] h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(194,97,59,.14),transparent)]"
+        className="pointer-events-none absolute left-1/2 top-[-240px] h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(42,74,138,.14),transparent)]"
       />
 
       <header className="relative px-5 py-5 sm:px-8">
         <Link href="/" className="inline-flex items-center gap-2.5 no-underline">
-          <Image src="/logo.png" alt="" width={28} height={28} className="rounded-lg" />
-          <span className="font-display text-[15px] text-foreground">OpenSaaS</span>
+          <Image src="/logo.png" alt="" width={36} height={36} />
+          <span className="font-display text-[16px] text-foreground">
+            Школа <span className="text-[#a8861c]">Независимости</span>
+          </span>
         </Link>
       </header>
 

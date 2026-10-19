@@ -38,7 +38,7 @@ function ConfirmEmailInner() {
   }, [token, router]);
 
   return (
-    <div className="rounded-[28px] border border-border bg-card px-8 py-10 text-center shadow-[0_28px_56px_-32px_rgba(22,20,15,.22)]">
+    <div className="rounded-[28px] border border-border bg-card px-8 py-10 text-center shadow-[0_28px_56px_-32px_rgba(15,30,61,.22)]">
       {state === "loading" && (
         <>
           <Loader2 className="mx-auto h-10 w-10 animate-spin text-muted-foreground" />

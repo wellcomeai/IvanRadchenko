@@ -4,9 +4,9 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "OpenSaaS — свой онлайн-бизнес за 15 минут с Claude Code или Codex",
+  title: "Школа Независимости — онлайн-школа финансовой грамотности",
   description:
-    "Открытый SaaS-шаблон (MIT) на FastAPI + Next.js. Отдайте AI-агенту ключ Timeweb — он сам задеплоит сервис с регистрацией, оплатой через Робокассу, кабинетом и админкой.",
+    "Курс из 6 модулей: финансовое мышление, личный бюджет, подушка безопасности и долги, инвестиции, защита капитала и путь к финансовой независимости.",
   icons: {
     icon: "/favicon/favicon.ico",
     apple: "/favicon/apple-touch-icon.png",

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&family=Onest:wght@400;500;600;700&family=Unbounded:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&family=Onest:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,44 +6,50 @@
 
 @layer base {
   :root {
-    /* Палитра кабинета и страниц входа = палитра лендинга (.lx ниже):
-       тёплая бумага, чернильный текст, акцент «глина». */
-    --background: 43 33% 96%;        /* #f8f6f1 ivory */
-    --foreground: 43 19% 7%;         /* #16140f ink */
+    /* Палитра «Школы Независимости»: светлый бело-серый фон, глубокий
+       тёмно-синий для текста и кнопок, синий чуть светлее для акцентов
+       и золото логотипа — только для точечных выделений. */
+    --background: 220 20% 97%;       /* #f5f6f8 светло-серый */
+    --foreground: 221 61% 15%;       /* #0f1e3d глубокий синий */
 
     --card: 0 0% 100%;
-    --card-foreground: 43 19% 7%;
+    --card-foreground: 221 61% 15%;
 
-    --primary: 43 19% 7%;            /* кнопки — чернильные, как на лендинге */
+    --primary: 221 61% 15%;          /* кнопки — тёмно-синие */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 41 29% 92%;         /* #f0ece3 sand */
-    --secondary-foreground: 43 19% 7%;
+    --secondary: 218 27% 94%;        /* #eceff4 */
+    --secondary-foreground: 221 61% 15%;
 
-    --muted: 41 29% 92%;
-    --muted-foreground: 40 7% 49%;   /* #857f73 */
+    --muted: 218 27% 94%;
+    --muted-foreground: 221 16% 50%; /* #6b7894 */
 
-    --accent: 41 29% 92%;
-    --accent-foreground: 43 19% 7%;
+    --accent: 218 27% 94%;
+    --accent-foreground: 221 61% 15%;
 
     --destructive: 4 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 18% 87%;
-    --input: 40 18% 84%;
-    --ring: 17 53% 50%;              /* #c2613b clay */
+    --border: 218 21% 89%;
+    --input: 218 21% 85%;
+    --ring: 220 53% 35%;             /* #2a4a8a */
 
-    --clay: 17 53% 50%;
-    --clay-ink: 17 60% 39%;
-    --clay-soft: 22 64% 91%;
+    /* Акцент (исторически называется clay): синий чуть светлее основного. */
+    --clay: 220 53% 35%;             /* #2a4a8a */
+    --clay-ink: 220 56% 28%;         /* #1f3a6e */
+    --clay-soft: 218 60% 93%;        /* #e3eaf6 */
     --sage: 142 21% 39%;
+
+    /* Золото логотипа */
+    --gold: 45 68% 47%;              /* #c9a227 */
+    --gold-soft: 46 70% 92%;
 
     /* Радиусы */
     --radius: 0.875rem;
     --radius-lg: 1.25rem;
     --radius-xl: 1.5rem;
 
-    --font-display: 'Unbounded', 'Onest', sans-serif;
+    --font-display: 'Playfair Display', Georgia, serif;
     --font-body: 'Onest', 'Geist', -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', 'Geist Mono', monospace;
   }
@@ -83,8 +89,10 @@
 /* Фирменный шрифт заголовков (как на лендинге). */
 .font-display {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  /* У Playfair по умолчанию «старинные» цифры — в номерах модулей нужны ровные. */
+  font-variant-numeric: lining-nums;
 }
 
 /* Custom scrollbar */
@@ -390,40 +398,41 @@
    Токены меняются здесь — компоненты берут цвета только из них.
    ========================================================================== */
 .lx {
-  --lx-ivory: #f8f6f1;
-  --lx-sand: #f0ece3;
+  --lx-ivory: #f5f6f8;
+  --lx-sand: #eceff4;
   --lx-paper: #ffffff;
-  --lx-ink: #16140f;
-  --lx-ink-2: #4a463e;
-  --lx-ink-3: #857f73;
-  --lx-line: rgba(22, 20, 15, 0.08);
-  --lx-line-2: rgba(22, 20, 15, 0.14);
-  --lx-clay: #c2613b;
-  --lx-clay-ink: #9f4a28;
-  --lx-clay-soft: #f6e6dc;
+  --lx-ink: #0f1e3d;
+  --lx-ink-2: #3b4a66;
+  --lx-ink-3: #6b7894;
+  --lx-line: rgba(15, 30, 61, 0.08);
+  --lx-line-2: rgba(15, 30, 61, 0.14);
+  --lx-clay: #2a4a8a;
+  --lx-clay-ink: #1f3a6e;
+  --lx-clay-soft: #e3eaf6;
   --lx-sage: #4f7a5f;
-  --lx-shadow: 0 1px 2px rgba(22, 20, 15, 0.04), 0 12px 32px -12px rgba(22, 20, 15, 0.12);
-  --lx-shadow-lg: 0 1px 2px rgba(22, 20, 15, 0.03), 0 28px 56px -32px rgba(22, 20, 15, 0.16);
+  --lx-gold: #c9a227;
+  --lx-navy: #0f1e3d;
+  --lx-shadow: 0 1px 2px rgba(15, 30, 61, 0.04), 0 12px 32px -12px rgba(15, 30, 61, 0.12);
+  --lx-shadow-lg: 0 1px 2px rgba(15, 30, 61, 0.03), 0 28px 56px -32px rgba(15, 30, 61, 0.16);
   background: var(--lx-ivory);
   color: var(--lx-ink);
   font-family: 'Onest', 'Geist', -apple-system, sans-serif;
   font-feature-settings: normal;
 }
-/* Фирменный шрифт — Unbounded: заголовки, цифры, кнопки, навигация.
-   Длинный текст остаётся в Onest: широкий Unbounded тяжело читать абзацами. */
+/* Заголовки — классическая антиква Playfair Display (перекликается с
+   логотипом), кнопки и подписи — Onest. */
 .lx-display,
 .lx h3,
-.lx-btn,
-.lx-eyebrow,
-.lx-chip {
-  font-family: 'Unbounded', 'Onest', sans-serif;
+.lx-h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-variant-numeric: lining-nums;
 }
 .lx-display {
-  font-weight: 500;
-  letter-spacing: -0.035em;
-  line-height: 1.02;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
 }
-.lx h3 { font-weight: 500; letter-spacing: -0.02em; }
+.lx h3 { font-weight: 600; letter-spacing: -0.01em; }
 .lx-btn { font-weight: 500; font-size: 14px; letter-spacing: -0.01em; }
 .lx-mono { font-family: 'JetBrains Mono', 'Geist Mono', monospace; }
 .lx-container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
@@ -432,22 +441,22 @@
    на 220px сверху и снизу, поэтому стыки секций не видны. */
 .lx-band {
   background: linear-gradient(180deg,
-    rgba(240, 236, 227, 0) 0,
+    rgba(236, 239, 244, 0) 0,
     var(--lx-sand) 220px,
     var(--lx-sand) calc(100% - 220px),
-    rgba(240, 236, 227, 0) 100%);
+    rgba(236, 239, 244, 0) 100%);
 }
 @media (max-width: 768px) { .lx-section { padding: 88px 0; } }
 
 .lx-h2 {
-  font-family: 'Unbounded', 'Onest', sans-serif;
-  font-weight: 500;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 600;
   font-size: clamp(1.9rem, 3.6vw, 3.1rem);
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
   color: var(--lx-ink);
 }
-/* Unbounded без курсива — акцентное слово выделяем цветом. */
+/* Акцентное слово выделяем цветом, без курсива. */
 .lx-h2 em, .lx-display em { font-style: normal; color: var(--lx-clay); }
 .lx-lead { font-size: 18px; line-height: 1.65; color: var(--lx-ink-2); }
 /* Переносы: заголовки делим на строки равной длины, в абзацах не оставляем
@@ -479,11 +488,11 @@
   white-space: nowrap;
 }
 .lx-btn:focus-visible { outline: 2px solid var(--lx-clay); outline-offset: 3px; }
-.lx-btn-ink { background: var(--lx-ink); color: #fff; box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 10px 24px -8px rgba(22,20,15,.45); }
-.lx-btn-ink:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 16px 32px -10px rgba(22,20,15,.5); }
+.lx-btn-ink { background: var(--lx-ink); color: #fff; box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 10px 24px -8px rgba(15,30,61,.45); }
+.lx-btn-ink:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 16px 32px -10px rgba(15,30,61,.5); }
 .lx-btn-ghost { background: rgba(255,255,255,.7); color: var(--lx-ink); border: 1px solid var(--lx-line-2); backdrop-filter: blur(8px); }
-.lx-btn-ghost:hover { background: #fff; border-color: rgba(22,20,15,.28); transform: translateY(-2px); }
-.lx-btn-clay { background: var(--lx-clay); color: #fff; box-shadow: 0 10px 24px -8px rgba(194,97,59,.55); }
+.lx-btn-ghost:hover { background: #fff; border-color: rgba(15,30,61,.28); transform: translateY(-2px); }
+.lx-btn-clay { background: var(--lx-clay); color: #fff; box-shadow: 0 10px 24px -8px rgba(42,74,138,.55); }
 .lx-btn-clay:hover { background: var(--lx-clay-ink); transform: translateY(-2px); }
 
 .lx-chip {

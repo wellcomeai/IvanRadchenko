@@ -16,6 +16,9 @@
   set-env K=V [K=V ...]     добавить/изменить ENV и дождаться передеплоя
   unset-env K [K ...]       удалить ENV и дождаться передеплоя
   test-email                отправить проверочное письмо админу и показать ошибку SMTP
+  storage-plan              тарифы S3-хранилища для видео курса (ничего не создаёт)
+  create-bucket --preset-id N --yes
+                            создать приватное S3-хранилище и прописать приложению S3_*
   status                    статус приложения, БД и последнего деплоя
   logs [-n 80]              последние строки логов приложения
   redeploy                  пересобрать последний коммит ветки
@@ -659,6 +662,86 @@ def cmd_test_email(args):
     sys.exit(1)
 
 
+# ------------------------------------------------------------------ S3-хранилище
+
+def storage_presets(api: Api) -> list[dict]:
+    presets = api.get("/presets/storages").get("storages_presets") or []
+    # «Горячее» хранилище — для видео, которое смотрят постоянно.
+    hot = [p for p in presets if p.get("storage_class") == "hot"] or presets
+    return sorted(hot, key=lambda p: (p["price"], p["disk"]))
+
+
+def bucket_label(app_name: str) -> str:
+    return f"Видео курса {app_name}"
+
+
+def find_bucket(api: Api, app_name: str) -> dict | None:
+    for b in api.get("/storages/buckets").get("buckets") or []:
+        if b.get("description") == bucket_label(app_name):
+            return b
+    return None
+
+
+def cmd_storage_plan(args):
+    api, repo, app_name = ctx(args)
+    existing = find_bucket(api, app_name)
+    if existing:
+        info(f"Хранилище уже есть: {existing['name']} (id {existing['id']}, статус {existing['status']})")
+    rows = [
+        {"preset_id": p["id"], "name": p.get("description_short"), "disk_gb": round(p["disk"] / 1024),
+         "price_month": p["price"], "location": p.get("location"), "class": p.get("storage_class")}
+        for p in storage_presets(api)
+    ]
+    print(json.dumps(rows, ensure_ascii=False, indent=2))
+    f = finances(api)
+    print(f"\nБаланс {f['balance']} ₽, уже тратится {f['monthly_cost']} ₽/мес.")
+    print("Покажите человеку тарифы, получите согласие и запустите create-bucket --preset-id N --yes")
+
+
+def cmd_create_bucket(args):
+    api, repo, app_name = ctx(args)
+    if not args.yes:
+        die("Хранилище платное. Покажите цену (storage-plan), получите согласие и добавьте --yes.")
+    st = load_state(app_name)
+    bucket = find_bucket(api, app_name)
+    if bucket:
+        step(f"Хранилище уже создано: {bucket['name']} (id {bucket['id']})")
+    else:
+        step(f"Создаю приватное S3-хранилище (тариф {args.preset_id})")
+        # Имя бакета: латиница, цифры и дефис; Timeweb может добавить свой префикс.
+        name = re.sub(r"[^a-z0-9-]", "-", f"{app_name}-video".lower())[:60]
+        bucket = api.post("/storages/buckets", {
+            "name": name,
+            "type": "private",
+            "preset_id": args.preset_id,
+            "description": bucket_label(app_name),
+        })["bucket"]
+
+    def ready():
+        b = api.get(f"/storages/buckets/{bucket['id']}")["bucket"]
+        return (b if b.get("status") == "created" and b.get("access_key") else None), b.get("status")
+
+    bucket = wait("Хранилище", ready, timeout=600)
+    st["bucket_id"] = bucket["id"]
+    save_state(app_name, st)
+
+    hostname = bucket.get("hostname") or "s3.twcstorage.ru"
+    envs = {
+        "S3_ENDPOINT": f"https://{hostname}",
+        "S3_REGION": bucket.get("location") or "ru-1",
+        "S3_BUCKET": bucket["name"],
+        "S3_ACCESS_KEY": bucket["access_key"],
+        "S3_SECRET_KEY": bucket["secret_key"],
+    }
+    app_id = _app_id(api, app_name, args)
+    step("Прописываю приложению S3_* (ключи в консоль не выводятся) и жду передеплой")
+    d = update_envs(api, app_id, envs)
+    if d["status"] != "success":
+        print("".join(app_logs(api, app_id)[-60:])[-4000:])
+        die(f"Деплой после подключения хранилища: {d['status']}")
+    print(f"OK: хранилище {bucket['name']} подключено. Админ может загружать видео: /admin/course")
+
+
 def cmd_status(args):
     api, repo, app_name = ctx(args)
     app_id = _app_id(api, app_name, args)
@@ -706,7 +789,7 @@ def main():
     sub.add_parser("plan").set_defaults(fn=cmd_plan)
     d = sub.add_parser("deploy")
     d.add_argument("--email", required=True, help="email администратора сайта")
-    d.add_argument("--app-title", default="OpenSaaS", help="значение APP_NAME")
+    d.add_argument("--app-title", default="Школа Независимости", help="значение APP_NAME")
     d.add_argument("--yes", action="store_true", help="подтверждение, что человек согласился на оплату")
     d.set_defaults(fn=cmd_deploy)
     s = sub.add_parser("set-env")
@@ -716,6 +799,11 @@ def main():
     u.add_argument("keys", nargs="+", metavar="KEY")
     u.set_defaults(fn=cmd_unset_env)
     sub.add_parser("test-email").set_defaults(fn=cmd_test_email)
+    sub.add_parser("storage-plan").set_defaults(fn=cmd_storage_plan)
+    cb = sub.add_parser("create-bucket")
+    cb.add_argument("--preset-id", type=int, required=True, dest="preset_id", help="тариф из storage-plan")
+    cb.add_argument("--yes", action="store_true", help="подтверждение, что человек согласился на оплату")
+    cb.set_defaults(fn=cmd_create_bucket)
     sub.add_parser("status").set_defaults(fn=cmd_status)
     lg = sub.add_parser("logs")
     lg.add_argument("-n", type=int, default=80)

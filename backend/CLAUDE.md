@@ -40,6 +40,7 @@ backend/
 │   ├── notifications/   # in-app уведомления
 │   ├── admin/           # админские операции
 │   ├── rate_limit/      # Redis или PostgreSQL fallback
+│   ├── course/          # курс: модули, уроки, видео в S3 (см. modules/course/CLAUDE.md)
 │   └── demo_notes/      # пример пользовательского модуля
 │
 └── scripts/create_admin.py   # idempotent: создаёт админа и дефолтные планы

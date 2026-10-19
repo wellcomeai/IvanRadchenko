@@ -46,6 +46,10 @@ const config: Config = {
           soft: "hsl(var(--clay-soft))",
         },
         sage: "hsl(var(--sage))",
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          soft: "hsl(var(--gold-soft))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -53,7 +57,7 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        display: ['Unbounded', 'Onest', 'sans-serif'],
+        display: ['Playfair Display', 'Georgia', 'serif'],
         body:    ['Onest', 'Geist', '-apple-system', 'sans-serif'],
         mono:    ['JetBrains Mono', 'Geist Mono', 'monospace'],
       },

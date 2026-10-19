@@ -19,8 +19,8 @@ export function PlanCard({ plan, active, loading, onSubscribe }: Props) {
       className={cn(
         "flex flex-col rounded-3xl border p-7 transition-all duration-300",
         active
-          ? "border-transparent bg-foreground text-background shadow-[0_28px_56px_-28px_rgba(22,20,15,.6)]"
-          : "border-border bg-card shadow-[0_1px_2px_rgba(22,20,15,.04),0_12px_32px_-16px_rgba(22,20,15,.12)] hover:-translate-y-1 hover:border-foreground/20",
+          ? "border-transparent bg-foreground text-background shadow-[0_28px_56px_-28px_rgba(15,30,61,.6)]"
+          : "border-border bg-card shadow-[0_1px_2px_rgba(15,30,61,.04),0_12px_32px_-16px_rgba(15,30,61,.12)] hover:-translate-y-1 hover:border-foreground/20",
       )}
     >
       <div className="flex items-center justify-between">
@@ -74,7 +74,7 @@ export function PlanCard({ plan, active, loading, onSubscribe }: Props) {
           "h-12 w-full rounded-full text-sm font-medium transition-all duration-200",
           active
             ? "cursor-default bg-background/10 text-background/80"
-            : "bg-foreground text-background hover:-translate-y-px hover:shadow-[0_12px_24px_-10px_rgba(22,20,15,.5)] disabled:opacity-60",
+            : "bg-foreground text-background hover:-translate-y-px hover:shadow-[0_12px_24px_-10px_rgba(15,30,61,.5)] disabled:opacity-60",
         )}
       >
         {active ? "Текущий тариф" : loading ? "Подождите…" : "Выбрать тариф"}

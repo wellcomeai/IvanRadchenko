@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     smtp_user: str = Field(default="")
     smtp_password: str = Field(default="")
     smtp_from_email: str = Field(default="noreply@example.com")
-    smtp_from_name: str = Field(default="OpenSaaS")
+    smtp_from_name: str = Field(default="Школа Независимости")
     smtp_use_tls: bool = Field(default=True)
 
     # === ALTCHA (защита регистрации от ботов, без внешних сервисов) ===
@@ -70,8 +70,15 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = Field(default="")
     stripe_enabled: bool = Field(default=False)
 
+    # === S3-хранилище материалов курса (Timeweb Cloud S3) ===
+    s3_endpoint: str = Field(default="https://s3.twcstorage.ru")
+    s3_region: str = Field(default="ru-1")
+    s3_bucket: str = Field(default="")
+    s3_access_key: str = Field(default="")
+    s3_secret_key: str = Field(default="")
+
     # === App ===
-    app_name: str = Field(default="OpenSaaS")
+    app_name: str = Field(default="Школа Независимости")
     # Пусто = брать адрес сайта из заголовка Host запроса (см. public_url.py).
     app_url: str = Field(default="")
     api_url: str = Field(default="http://localhost:8000")
@@ -125,6 +132,11 @@ class Settings(BaseSettings):
     def email_enabled(self) -> bool:
         """Почта настроена: включаются подтверждение email и сброс пароля."""
         return bool(self.smtp_user and self.smtp_password)
+
+    @property
+    def storage_enabled(self) -> bool:
+        """S3 настроен: можно загружать и смотреть материалы курса."""
+        return bool(self.s3_bucket and self.s3_access_key and self.s3_secret_key)
 
     @property
     def redis_enabled(self) -> bool:

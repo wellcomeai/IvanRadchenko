@@ -34,7 +34,9 @@ src/app/
 │
 ├── (dashboard)/            # защищённые страницы (AuthGuard + Sidebar)
 │   ├── layout.tsx
-│   ├── dashboard/page.tsx
+│   ├── dashboard/page.tsx  # главная ученика: 6 модулей курса
+│   ├── modules/[id]/page.tsx  # уроки модуля
+│   ├── lessons/[id]/page.tsx  # урок: видео, описание, файлы
 │   ├── billing/page.tsx
 │   ├── referrals/page.tsx
 │   ├── api-keys/page.tsx
@@ -47,6 +49,8 @@ src/app/
     ├── layout.tsx
     └── admin/
         ├── page.tsx
+        ├── course/page.tsx              # управление курсом
+        ├── course/lessons/[id]/page.tsx # урок: текст + загрузка видео в S3
         ├── users/page.tsx
         ├── billing/page.tsx
         └── referrals/page.tsx
