@@ -17,8 +17,9 @@
   unset-env K [K ...]       удалить ENV и дождаться передеплоя
   test-email                отправить проверочное письмо админу и показать ошибку SMTP
   storage-plan              тарифы S3-хранилища для видео курса (ничего не создаёт)
-  create-bucket --preset-id N --yes
+  create-bucket --preset-id N --yes [--print-env]
                             создать приватное S3-хранилище и прописать приложению S3_*
+                            (с --print-env — только вывести переменные, приложение не трогать)
   status                    статус приложения, БД и последнего деплоя
   logs [-n 80]              последние строки логов приложения
   redeploy                  пересобрать последний коммит ветки
@@ -666,9 +667,9 @@ def cmd_test_email(args):
 
 def storage_presets(api: Api) -> list[dict]:
     presets = api.get("/presets/storages").get("storages_presets") or []
-    # «Горячее» хранилище — для видео, которое смотрят постоянно.
-    hot = [p for p in presets if p.get("storage_class") == "hot"] or presets
-    return sorted(hot, key=lambda p: (p["price"], p["disk"]))
+    # Сначала «горячее» хранилище (для видео, которое смотрят постоянно),
+    # но Timeweb бывает его распродаёт — тогда пригодится и «холодное».
+    return sorted(presets, key=lambda p: (p.get("storage_class") != "hot", p["price"], p["disk"]))
 
 
 def bucket_label(app_name: str) -> str:
@@ -725,7 +726,8 @@ def cmd_create_bucket(args):
     st["bucket_id"] = bucket["id"]
     save_state(app_name, st)
 
-    hostname = bucket.get("hostname") or "s3.twcstorage.ru"
+    # hostname приходит то с https://, то без — приводим к одному виду.
+    hostname = re.sub(r"^https?://", "", bucket.get("hostname") or "s3.twcstorage.ru").rstrip("/")
     envs = {
         "S3_ENDPOINT": f"https://{hostname}",
         "S3_REGION": bucket.get("location") or "ru-1",
@@ -733,6 +735,13 @@ def cmd_create_bucket(args):
         "S3_ACCESS_KEY": bucket["access_key"],
         "S3_SECRET_KEY": bucket["secret_key"],
     }
+    if args.print_env:
+        step("Хранилище готово. Переменные для приложения (Timeweb → App Platform → приложение → Переменные):")
+        for k, v in envs.items():
+            print(f"{k}={v}")
+        print("\nКлючи секретные: не коммитьте их и не публикуйте.")
+        return
+
     app_id = _app_id(api, app_name, args)
     step("Прописываю приложению S3_* (ключи в консоль не выводятся) и жду передеплой")
     d = update_envs(api, app_id, envs)
@@ -803,6 +812,8 @@ def main():
     cb = sub.add_parser("create-bucket")
     cb.add_argument("--preset-id", type=int, required=True, dest="preset_id", help="тариф из storage-plan")
     cb.add_argument("--yes", action="store_true", help="подтверждение, что человек согласился на оплату")
+    cb.add_argument("--print-env", action="store_true", dest="print_env",
+                    help="не трогать приложение, а вывести S3_* — человек пропишет их сам")
     cb.set_defaults(fn=cmd_create_bucket)
     sub.add_parser("status").set_defaults(fn=cmd_status)
     lg = sub.add_parser("logs")
