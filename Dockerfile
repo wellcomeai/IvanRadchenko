@@ -32,6 +32,12 @@ RUN npm run build
 # =========================================================
 FROM python:3.11-slim
 
+# Node.js нужен только для `node server.js` (Next.js standalone).
+# Берём бинарник из готового образа node:20-slim (Debian/glibc, как python:3.11-slim),
+# а не ставим через nodesource: не нужен лишний apt-репозиторий и долгая загрузка.
+# node:20-alpine не подходит: там musl, бинарник здесь не запустится.
+COPY --from=node:20-slim /usr/local/bin/node /usr/local/bin/node
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -48,8 +54,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         gosu \
         postgresql-client \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs \
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/* \
     && groupadd --system --gid 1001 app \
