@@ -314,8 +314,8 @@ set-env APP_URL=https://мойдомен.ру
   делается от `SECRET_KEY`). Выключать (`ALTCHA_ENABLED=false`) стоит только для отладки.
 - `REDIS_URL`: без него лимиты запросов хранятся в PostgreSQL. Это штатный режим.
 - `STRIPE_*`: это заготовка, она не активна.
-- Предупреждение в логах `bcrypt has no attribute '__about__'` / `(trapped) error reading bcrypt version`
-  безвредно. Это несовместимость версий passlib и bcrypt, пароли работают нормально.
+- Число воркеров gunicorn и их таймаут меняются через ENV без пересборки:
+  `WEB_CONCURRENCY` (по умолчанию 2) и `GUNICORN_TIMEOUT` (по умолчанию 60 с), см. `backend/gunicorn.conf.py`.
 
 ## Подводные камни (уже учтены в скрипте, пригодятся при ручной отладке)
 
