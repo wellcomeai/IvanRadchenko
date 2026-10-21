@@ -41,12 +41,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # ---------------------------------------------------------
 # System packages
-# supervisor ставится из PyPI (requirements.txt), вместо gosu — setpriv,
-# вместо curl в HEALTHCHECK — python: всё это уже есть в образе.
+# supervisor ставится из PyPI (requirements.txt), вместо gosu — setpriv.
+# curl нужен для HEALTHCHECK (так проверку делали и раньше, Timeweb ждёт healthy).
 # ---------------------------------------------------------
 RUN sed -i 's|http://deb.debian.org|https://mirror.yandex.ru|g' /etc/apt/sources.list.d/debian.sources \
     && apt-get update \
-    && apt-get install -y --no-install-recommends nginx \
+    && apt-get install -y --no-install-recommends nginx curl \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/* \
     # По умолчанию auto = число ядер хоста, а не контейнера
     && sed -i 's/^worker_processes .*/worker_processes 2;/' /etc/nginx/nginx.conf \
@@ -115,7 +115,7 @@ RUN sed -i 's/\r//' /start.sh \
 # =========================================================
 EXPOSE 10000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:10000/health', timeout=4)" || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS --noproxy '*' http://127.0.0.1:10000/health || exit 1
 
 CMD ["/start.sh"]
