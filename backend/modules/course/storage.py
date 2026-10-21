@@ -47,7 +47,15 @@ def _client():
         aws_secret_access_key=settings.s3_secret_key,
         # boto3 закреплён на 1.35.x: с 1.36 он по умолчанию шлёт новые
         # контрольные суммы, которые S3-совместимые хранилища понимают не всегда.
-        config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+        # Короткие таймауты: по умолчанию у boto3 60 с на соединение и чтение
+        # и до 5 попыток, и один зависший запрос держит поток минутами.
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "path"},
+            connect_timeout=5,
+            read_timeout=20,
+            retries={"max_attempts": 2, "mode": "standard"},
+        ),
     )
 
 
@@ -156,7 +164,7 @@ def ensure_cors() -> None:
     """Разрешить браузеру грузить файлы в бакет и читать ETag частей.
 
     Ссылки подписаны и сами по себе дают доступ, поэтому источник — любой.
-    Вызывается при старте приложения; ошибка не мешает запуску.
+    Вызывается из start.sh до запуска gunicorn; ошибка не мешает запуску.
     """
     if not settings.storage_enabled:
         return

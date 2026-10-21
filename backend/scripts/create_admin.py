@@ -75,7 +75,7 @@ async def main() -> None:
 
         admin = User(
             email=settings.admin_email,
-            hashed_password=hash_password(settings.admin_password),
+            hashed_password=await hash_password(settings.admin_password),
             role=UserRole.ADMIN,
             is_active=True,
             is_email_verified=True,

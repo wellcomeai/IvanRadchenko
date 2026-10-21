@@ -5,20 +5,35 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
+import bcrypt
+from anyio import to_thread
 from jose import jwt
-from passlib.context import CryptContext
 
 from config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt нарочно медленный (~0.3 с на хеш): считаем его в пуле потоков, иначе
+# он блокирует event loop воркера и gunicorn убивает его по WORKER TIMEOUT.
+# bcrypt отпускает GIL, поэтому другие запросы в это время обслуживаются.
+BCRYPT_ROUNDS = 12
 
 
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+def _hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt(BCRYPT_ROUNDS)).decode()
 
 
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+def _verify(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode(), hashed.encode())
+    except ValueError:  # битый или не-bcrypt хеш
+        return False
+
+
+async def hash_password(password: str) -> str:
+    return await to_thread.run_sync(_hash, password)
+
+
+async def verify_password(plain: str, hashed: str) -> bool:
+    return await to_thread.run_sync(_verify, plain, hashed)
 
 
 def _create_token(

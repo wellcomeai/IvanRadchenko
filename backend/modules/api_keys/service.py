@@ -1,33 +1,38 @@
 """Бизнес-логика API ключей."""
 from __future__ import annotations
 
+import hashlib
+import hmac
 import secrets
 from datetime import datetime, timezone
 from typing import Sequence
 from uuid import UUID
 
 from fastapi import HTTPException
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
 from modules.auth.models import User
+from modules.auth.utils import verify_password
 from modules.api_keys.models import ApiKey
 from modules.api_keys.schemas import ApiKeyCreate
 
 KEY_PREFIX_LENGTH = 16
 PREFIX = "osk_live_"
 
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def _hash_key(key: str) -> str:
-    return _pwd.hash(key)
+    # Ключ — длинная случайная строка, перебор по нему невозможен, поэтому
+    # медленный bcrypt не нужен: sha256 не блокирует event loop на каждом запросе.
+    return hashlib.sha256(key.encode()).hexdigest()
 
 
-def _verify_key(key: str, key_hash: str) -> bool:
-    return _pwd.verify(key, key_hash)
+async def _verify_key(key: str, key_hash: str) -> bool:
+    if key_hash.startswith("$2"):  # ключи, выпущенные до перехода на sha256
+        return await verify_password(key, key_hash)
+    return hmac.compare_digest(_hash_key(key), key_hash)
 
 
 async def create_key(
@@ -96,7 +101,7 @@ async def authenticate_api_key(db: AsyncSession, full_key: str) -> tuple[ApiKey,
 
     matched: ApiKey | None = None
     for c in candidates:
-        if _verify_key(full_key, c.key_hash):
+        if await _verify_key(full_key, c.key_hash):
             matched = c
             break
 

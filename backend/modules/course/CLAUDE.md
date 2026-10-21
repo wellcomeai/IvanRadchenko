@@ -46,7 +46,8 @@
    ссылки на каждую часть (16 МБ, для огромных файлов больше; ссылки живут сутки).
 2. Браузер шлёт части `PUT` прямо в S3 (с `Content-Type: application/octet-stream`)
    и собирает `ETag` каждой части. Для этого у бакета CORS с `ExposeHeaders: ETag` —
-   его ставит `storage.ensure_cors()` при старте приложения.
+   его ставит `storage.ensure_cors()` из `start.sh` при старте контейнера (один раз,
+   до gunicorn: сетевой вызов в startup воркера приводил к WORKER TIMEOUT).
 3. Фронт вызывает `complete` → `complete_multipart_upload`, сервер проверяет размер.
    Отменённая/упавшая загрузка удаляется (`DELETE materials/{id}` → abort).
 

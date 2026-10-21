@@ -9,7 +9,8 @@
 - `models.py` — User, UserProfile, EmailVerificationToken, PasswordResetToken
 - `schemas.py` — Pydantic схемы для запросов/ответов
 - `service.py` — бизнес-логика
-- `utils.py` — `hash_password`, `verify_password`, `create_access_token`, ...
+- `utils.py` — `hash_password`, `verify_password` (async: bcrypt считается в пуле потоков,
+  чтобы не блокировать event loop), `create_access_token`, ...
 
 ## Модели
 

@@ -41,12 +41,12 @@ async def update_profile(
 async def change_password(
     db: AsyncSession, user: User, payload: PasswordChange
 ) -> None:
-    if not verify_password(payload.current_password, user.hashed_password):
+    if not await verify_password(payload.current_password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
         )
-    user.hashed_password = hash_password(payload.new_password)
+    user.hashed_password = await hash_password(payload.new_password)
     await db.commit()
 
 

@@ -8,7 +8,7 @@
 - **PostgreSQL 15** (asyncpg drvier)
 - **Alembic** для миграций
 - **Pydantic v2** + `pydantic-settings`
-- **python-jose** + **passlib[bcrypt]** для JWT/паролей
+- **python-jose** + **bcrypt** для JWT/паролей (хеширование — в пуле потоков, `await hash_password(...)`)
 - **aiosmtplib** + **Jinja2** для писем
 - **Redis (опционально)** — для rate limiting; при отсутствии используется PostgreSQL fallback
 

@@ -44,7 +44,7 @@ async def register_user(
     now = datetime.now(timezone.utc)
     user = User(
         email=payload.email,
-        hashed_password=hash_password(payload.password),
+        hashed_password=await hash_password(payload.password),
         trial_ends_at=now + timedelta(days=settings.trial_days),
     )
     db.add(user)
@@ -148,7 +148,7 @@ async def verify_email_code(db: AsyncSession, user_id: uuid.UUID, code: str) -> 
 
 async def authenticate(db: AsyncSession, email: str, password: str) -> User:
     user = await db.scalar(select(User).where(User.email == email))
-    if not user or not verify_password(password, user.hashed_password):
+    if not user or not await verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -207,6 +207,6 @@ async def reset_password(db: AsyncSession, token: str, new_password: str) -> Use
     user = await db.scalar(select(User).where(User.id == rec.user_id))
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    user.hashed_password = hash_password(new_password)
+    user.hashed_password = await hash_password(new_password)
     await db.commit()
     return user

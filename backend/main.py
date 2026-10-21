@@ -25,13 +25,9 @@ async def lifespan(app: FastAPI):
         logger.info("Redis enabled: %s", settings.redis_url)
     else:
         logger.info("Redis disabled — using PostgreSQL fallback for rate limiting")
-    if settings.storage_enabled:
-        from starlette.concurrency import run_in_threadpool
-
-        from modules.course import storage
-
-        await run_in_threadpool(storage.ensure_cors)
-    else:
+    # CORS бакета S3 настраивает start.sh один раз до запуска gunicorn: сетевой
+    # вызов здесь задерживал бы старт каждого воркера (WORKER TIMEOUT).
+    if not settings.storage_enabled:
         logger.info("S3 storage disabled — course materials upload unavailable")
     yield
     logger.info("Shutting down")
