@@ -1,0 +1,40 @@
+# =========================================================
+# Базовый образ («заготовка»): Python + все пакеты из requirements.txt + nginx/curl.
+#
+# Сеть сборщика Timeweb качает с PyPI со скоростью ~25 кБ/с, и pip занимал
+# до 20 минут. Поэтому пакеты ставятся здесь, на серверах GitHub Actions
+# (.github/workflows/base-image.yml), а образ лежит в ghcr.io. Корневой
+# Dockerfile строится поверх него и PyPI почти не трогает.
+#
+# Пересобирается сам при изменении backend/requirements.txt или этого файла.
+# Секретов в образе нет, поэтому он публичный.
+# =========================================================
+FROM python:3.11-slim-bookworm
+
+LABEL org.opencontainers.image.source="https://github.com/wellcomeai/IvanRadchenko" \
+      org.opencontainers.image.description="Базовый образ: Python-зависимости, nginx, curl"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# supervisor ставится из PyPI (requirements.txt), вместо gosu — setpriv.
+# curl нужен для HEALTHCHECK.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nginx curl \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/* \
+    # По умолчанию auto = число ядер хоста, а не контейнера
+    && sed -i 's/^worker_processes .*/worker_processes 2;/' /etc/nginx/nginx.conf \
+    && groupadd --system --gid 1001 app \
+    && useradd  --system \
+        --uid 1001 \
+        --gid app \
+        --home-dir /app \
+        --shell /usr/sbin/nologin \
+        app
+
+COPY backend/requirements.txt /tmp/requirements.txt
+
+RUN pip install -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt

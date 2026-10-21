@@ -1,0 +1,42 @@
+# Собирает базовый образ с Python-пакетами (Dockerfile.base) и публикует его
+# в ghcr.io. Корневой Dockerfile строится поверх него, чтобы сборка на Timeweb
+# не качала пакеты с медленного для неё PyPI.
+name: Базовый образ
+
+on:
+  push:
+    paths:
+      - backend/requirements.txt
+      - Dockerfile.base
+      - .github/workflows/base-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/wellcomeai/ivanradchenko-base
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.base
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:deps
+            ${{ env.IMAGE }}:deps-${{ github.sha }}

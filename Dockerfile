@@ -1,3 +1,9 @@
+# Базовый образ с Python-пакетами, nginx и curl собирается в GitHub Actions
+# (Dockerfile.base, .github/workflows/base-image.yml): PyPI у сборщика Timeweb
+# очень медленный. Чтобы собрать без него, как раньше, возьмите Dockerfile из
+# ветки 2110.
+ARG BASE_IMAGE=ghcr.io/wellcomeai/ivanradchenko-base:deps
+
 # =========================================================
 # Stage 1: Build frontend
 # glibc-образ, как и рантайм: нативные модули из standalone-сборки
@@ -27,41 +33,13 @@ RUN npm run build
 # - nextjs standalone server
 # managed by supervisord
 #
-# Слои идут от редко меняющихся к часто меняющимся: apt → pip → node → код.
-# Сеть сборщика Timeweb медленно качает с deb.debian.org и PyPI, поэтому
-# apt берём с зеркала Яндекса и ставим только nginx.
+# Пакеты уже стоят в базовом образе. pip ниже только сверяет версии и
+# докачает новый пакет, если базовый образ ещё не успели пересобрать.
 # =========================================================
-FROM python:3.11-slim-bookworm
+FROM ${BASE_IMAGE}
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# ---------------------------------------------------------
-# System packages
-# supervisor ставится из PyPI (requirements.txt), вместо gosu — setpriv.
-# curl нужен для HEALTHCHECK (так проверку делали и раньше, Timeweb ждёт healthy).
-# ---------------------------------------------------------
-RUN sed -i 's|http://deb.debian.org|https://mirror.yandex.ru|g' /etc/apt/sources.list.d/debian.sources \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends nginx curl \
-    && rm -rf /var/lib/apt/lists/* /var/cache/apt/* \
-    # По умолчанию auto = число ядер хоста, а не контейнера
-    && sed -i 's/^worker_processes .*/worker_processes 2;/' /etc/nginx/nginx.conf \
-    && groupadd --system --gid 1001 app \
-    && useradd  --system \
-        --uid 1001 \
-        --gid app \
-        --home-dir /app \
-        --shell /usr/sbin/nologin \
-        app
-
-
-# =========================================================
-# Backend dependencies
-# =========================================================
 WORKDIR /app/backend
 
 COPY backend/requirements.txt .

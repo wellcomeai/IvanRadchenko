@@ -338,6 +338,11 @@ set-env APP_URL=https://мойдомен.ру
   дефолтному, если `ADMIN_PASSWORD` дефолтный или если в `CORS_ORIGINS` есть `*`.
 - Логи: `GET /apps/{id}/logs` → `app_logs` (массив строк). Деплои: `GET /apps/{id}/deploys`,
   статусы: `building` → `prepare` → `container_started` → `success`/`failure`.
+- **PyPI у сборщика Timeweb очень медленный** (~25 кБ/с, pip шёл до 20 минут). Поэтому
+  Python-пакеты, nginx и curl лежат в базовом образе `ghcr.io/wellcomeai/ivanradchenko-base:deps`
+  (`Dockerfile.base`), его собирает GitHub Actions (`.github/workflows/base-image.yml`) при
+  изменении `backend/requirements.txt`. После такого изменения дождись зелёного workflow и
+  только потом деплой. Образ должен быть публичным (GitHub → Packages → настройки пакета).
 - **Почтовые порты закрыты**: App Platform по умолчанию блокирует исходящие 25, 465, 587 и 2525.
   Симптом в логах: `SMTPConnectTimeoutError: Timed out connecting to smtp.gmail.com on port 587`.
   Открывает только поддержка Timeweb (шаг 5.1). Проверка: `test-email`.
