@@ -161,6 +161,13 @@ export default function RegisterPage() {
         >
           {isSubmitting ? "Создаём аккаунт…" : "Создать аккаунт"}
         </Button>
+
+        <p className="text-center text-xs leading-relaxed text-muted-foreground">
+          Нажимая «Создать аккаунт», вы принимаете{" "}
+          <Link href="/terms" target="_blank" className="underline">пользовательское соглашение</Link> и даёте согласие на
+          обработку персональных данных в соответствии с{" "}
+          <Link href="/privacy" target="_blank" className="underline">политикой</Link>.
+        </p>
       </form>
     </AuthCard>
   );

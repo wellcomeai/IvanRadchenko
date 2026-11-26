@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Тарифов пока нет: обучение бесплатное. Вернуть страницу, когда подключим Робокассу. */
+/** Цена курса показана на главной в блоке «Стоимость». */
 export default function PricingPage() {
-  redirect("/#program");
+  redirect("/#price");
 }

@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/#program", label: "Программа" },
   { href: "/#how", label: "Как проходит обучение" },
   { href: "/#for-whom", label: "Для кого" },
+  { href: "/#price", label: "Стоимость" },
 ];
 
 export function PublicHeader() {

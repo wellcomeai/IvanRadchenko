@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { SELLER } from "@/lib/legal";
 
 const columns = [
   {
@@ -8,6 +9,7 @@ const columns = [
       { label: "Программа курса", href: "/#program" },
       { label: "Как проходит обучение", href: "/#how" },
       { label: "Для кого", href: "/#for-whom" },
+      { label: "Стоимость", href: "/#price" },
     ],
   },
   {
@@ -17,13 +19,21 @@ const columns = [
       { label: "Регистрация", href: "/register" },
     ],
   },
+  {
+    title: "Документы",
+    links: [
+      { label: "Публичная оферта", href: "/offer" },
+      { label: "Пользовательское соглашение", href: "/terms" },
+      { label: "Политика обработки персональных данных", href: "/privacy" },
+    ],
+  },
 ];
 
 export function Footer() {
   return (
     <footer style={{ background: "linear-gradient(180deg, #f5f6f8 0, #eceff4 240px)", color: "#0f1e3d", fontFamily: "Onest, Geist, sans-serif" }}>
       <div className="mx-auto px-6 pt-24 pb-10" style={{ maxWidth: 1180 }}>
-        <div className="grid md:grid-cols-[1.6fr_1fr_1fr] gap-12 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr] gap-12 mb-16">
           <div>
             <Link href="/" className="inline-flex items-center gap-3 mb-5 no-underline">
               <Image src="/logo.png" alt="" width={44} height={44} />
@@ -52,8 +62,17 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="pt-6 flex flex-wrap items-center justify-between gap-3 text-[13px] text-[#6b7894]" style={{ borderTop: "1px solid rgba(15,30,61,0.08)" }}>
-          <span>© {new Date().getFullYear()} Школа Независимости</span>
+        <div className="pt-6 pb-4 text-[13px] leading-relaxed text-[#6b7894]" style={{ borderTop: "1px solid rgba(15,30,61,0.08)" }}>
+          {SELLER.shortName} · ИНН {SELLER.inn} · ОГРНИП {SELLER.ogrnip} · {SELLER.address} ·{" "}
+          <a href={SELLER.phoneHref} className="text-inherit">{SELLER.phone}</a> ·{" "}
+          <a href={`mailto:${SELLER.email}`} className="text-inherit">{SELLER.email}</a>
+        </div>
+
+        <div className="pt-4 flex flex-wrap items-center justify-between gap-3 text-[13px] text-[#6b7894]" style={{ borderTop: "1px solid rgba(15,30,61,0.08)" }}>
+          <span>
+            © {new Date().getFullYear()} Школа Независимости ·{" "}
+            <Link href="/offer" className="text-inherit underline">Публичная оферта</Link>
+          </span>
           <span>Материалы курса носят образовательный характер и не являются индивидуальной инвестиционной рекомендацией.</span>
         </div>
       </div>
