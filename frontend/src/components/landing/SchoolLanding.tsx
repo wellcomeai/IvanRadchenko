@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   BookOpenCheck,
-  Check,
   CircleDollarSign,
   GraduationCap,
   LineChart,
@@ -21,7 +20,7 @@ import { courseApi } from "@/api/course";
 import { useHasSession } from "@/hooks/useHasSession";
 import { lessonsWord } from "@/components/course/plural";
 import type { ProgramModule } from "@/types";
-import { COURSE_PRICE_LABEL, SELLER } from "@/lib/legal";
+import { SELLER } from "@/lib/legal";
 
 /** Пока программа грузится с сервера (или если он недоступен) — показываем стартовую. */
 const FALLBACK_PROGRAM: ProgramModule[] = [
@@ -46,11 +45,11 @@ const AUDIENCE = [
   { icon: PiggyBank, text: "Хотите обеспечить будущее семьи и не зависеть от пенсии" },
 ];
 
-function PrimaryCta({ className = "", label }: { className?: string; label?: string }) {
+function PrimaryCta({ className = "" }: { className?: string }) {
   const loggedIn = useHasSession();
   return (
     <Link href={loggedIn ? "/dashboard" : "/register"} className={"lx-btn lx-btn-ink " + className}>
-      {loggedIn ? "Перейти к урокам" : label ?? "Начать обучение бесплатно"}
+      {loggedIn ? "Перейти к урокам" : "Начать обучение бесплатно"}
       <ArrowRight size={18} />
     </Link>
   );
@@ -80,7 +79,7 @@ function Hero() {
           <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-[14px] text-[var(--lx-ink-2)]">
             <span className="flex items-center gap-2"><GraduationCap size={18} className="text-[var(--lx-gold)]" /> 6 модулей</span>
             <span className="flex items-center gap-2"><PlayCircle size={18} className="text-[var(--lx-gold)]" /> Видеоуроки</span>
-            <span className="flex items-center gap-2"><Sparkles size={18} className="text-[var(--lx-gold)]" /> Полный курс — {COURSE_PRICE_LABEL}</span>
+            <span className="flex items-center gap-2"><Sparkles size={18} className="text-[var(--lx-gold)]" /> Материалы и задания</span>
           </div>
         </div>
         <div className="relative mx-auto w-full max-w-[520px]">
@@ -197,51 +196,6 @@ function Audience() {
   );
 }
 
-const PRICE_FEATURES = [
-  "Все 6 модулей курса и видеоуроки",
-  "Материалы и практические задания к урокам",
-  "Доступ с компьютера и телефона, в своём темпе",
-  "Единоразовая оплата — без подписок и скрытых платежей",
-];
-
-function Pricing() {
-  return (
-    <section id="price" className="lx-section scroll-mt-20">
-      <div className="lx-container grid items-center gap-12 lg:grid-cols-[1fr_1fr]">
-        <div>
-          <div className="lx-eyebrow">Стоимость</div>
-          <h2 className="lx-h2 mt-5">
-            Один платёж — <em>весь курс</em>
-          </h2>
-          <p className="lx-lead mt-5">
-            Зарегистрируйтесь бесплатно, посмотрите первые уроки, а полный доступ к программе откройте в личном кабинете.
-          </p>
-        </div>
-        <div className="lx-card p-8 sm:p-10">
-          <div className="text-[15px] font-medium text-[var(--lx-ink-2)]">Курс «Школа Независимости»</div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="font-display text-[52px] leading-none text-[var(--lx-ink)]">{COURSE_PRICE_LABEL}</span>
-            <span className="text-[15px] text-[var(--lx-ink-3)]">единоразово</span>
-          </div>
-          <ul className="m-0 mt-8 grid list-none gap-3 p-0">
-            {PRICE_FEATURES.map((f) => (
-              <li key={f} className="flex gap-3 text-[15.5px] leading-relaxed text-[var(--lx-ink)]">
-                <Check size={20} className="mt-0.5 shrink-0 text-[var(--lx-gold)]" />
-                {f}
-              </li>
-            ))}
-          </ul>
-          <PrimaryCta className="mt-9 w-full justify-center" label="Зарегистрироваться" />
-          <p className="mt-5 text-[13px] leading-relaxed text-[var(--lx-ink-3)]">
-            Оплата банковской картой через Робокассу. Оплачивая курс, вы принимаете условия{" "}
-            <Link href="/offer" className="underline">публичной оферты</Link>.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function SellerInfo() {
   return (
     <section id="contacts" className="lx-section lx-band scroll-mt-20 !py-20">
@@ -284,7 +238,7 @@ function FinalCta() {
             Начните путь к независимости <span className="text-[var(--lx-gold)]">сегодня</span>
           </h2>
           <p className="relative mx-auto mt-5 max-w-[520px] text-[17px] leading-relaxed text-white/75">
-            Регистрация бесплатная — первые уроки доступны сразу после входа. Полный курс — {COURSE_PRICE_LABEL}.
+            Регистрация бесплатная — первые уроки доступны сразу после входа.
           </p>
           <div className="relative mt-9 flex justify-center">
             <PrimaryCta className="!bg-[var(--lx-gold)] !text-[var(--lx-navy)]" />
@@ -302,7 +256,6 @@ export function SchoolLanding() {
       <Program />
       <HowItWorks />
       <Audience />
-      <Pricing />
       <FinalCta />
       <SellerInfo />
     </>

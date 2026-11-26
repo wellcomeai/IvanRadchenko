@@ -9,7 +9,6 @@ const columns = [
       { label: "Программа курса", href: "/#program" },
       { label: "Как проходит обучение", href: "/#how" },
       { label: "Для кого", href: "/#for-whom" },
-      { label: "Стоимость", href: "/#price" },
     ],
   },
   {

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Цена курса показана на главной в блоке «Стоимость». */
+/** Отдельной страницы тарифов нет: стоимость указана в оферте и на странице оплаты. */
 export default function PricingPage() {
-  redirect("/#price");
+  redirect("/#program");
 }
