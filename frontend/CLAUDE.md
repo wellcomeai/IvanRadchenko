@@ -34,10 +34,10 @@ src/app/
 │
 ├── (dashboard)/            # защищённые страницы (AuthGuard + Sidebar)
 │   ├── layout.tsx
-│   ├── dashboard/page.tsx  # главная ученика: 6 модулей курса
-│   ├── modules/[id]/page.tsx  # уроки модуля
-│   ├── lessons/[id]/page.tsx  # урок: видео, описание, файлы
-│   ├── billing/page.tsx
+│   ├── dashboard/page.tsx  # главная ученика: прогресс, «Продолжить», модули
+│   ├── modules/[id]/page.tsx  # уроки модуля со статусами (пройден / открыт / закрыт)
+│   ├── lessons/[id]/page.tsx  # урок: видео, файлы, кнопка «Урок пройден»; 403 → экран «закрыто»
+│   ├── billing/page.tsx    # «Оплата курса»: весь курс или модули по порядку
 │   ├── referrals/page.tsx
 │   ├── api-keys/page.tsx
 │   ├── notifications/page.tsx
@@ -51,6 +51,8 @@ src/app/
         ├── page.tsx
         ├── course/page.tsx              # управление курсом
         ├── course/lessons/[id]/page.tsx # урок: текст + загрузка видео в S3
+        ├── students/page.tsx            # ученики: доступ и прогресс
+        ├── students/[id]/page.tsx       # ученик: уроки, выдать/отозвать доступ
         ├── users/page.tsx
         ├── billing/page.tsx
         └── referrals/page.tsx

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ArrowUpRight, PlayCircle } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CheckCircle2, Clock, Lock, PlayCircle } from "lucide-react";
 
 import { EmailBanner } from "@/components/EmailBanner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { courseApi } from "@/api/course";
 import { useAuthStore } from "@/store/authStore";
 import { lessonsWord } from "@/components/course/plural";
+import { daysUntil, formatDate, formatMoney } from "@/lib/utils";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -17,14 +18,37 @@ export default function DashboardPage() {
     queryFn: () => courseApi.modules(),
   });
 
+  const isAdmin = user?.role === "admin";
   const firstName = user?.profile?.first_name;
-  const firstLesson = modules?.flatMap((m) => m.lessons)[0];
-  const totalLessons = modules?.reduce((sum, m) => sum + m.lessons.length, 0) ?? 0;
+  const all = modules?.flatMap((m) => m.lessons) ?? [];
+  const totalLessons = all.length;
+  const doneLessons = all.filter((l) => l.status === "completed").length;
+  // Куда вести по кнопке: первый открытый непройденный урок.
+  const current = all.find((l) => l.status === "available");
+  const needsPayment = !current && all.some((l) => l.status === "locked_payment");
+  // Ближайшее окончание доступа (если меньше 7 дней).
+  const ending = modules
+    ?.map((m) => m.access_until)
+    .filter((d): d is string => Boolean(d))
+    .map((d) => ({ d, left: daysUntil(d) }))
+    .filter((x) => x.left <= 7)
+    .sort((a, b) => a.left - b.left)[0];
 
   return (
     <>
       <div className="space-y-3">
         <EmailBanner />
+        {!isAdmin && ending && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-gold/40 bg-gold-soft/50 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <span className="flex items-center gap-2">
+              <Clock className="h-4 w-4 shrink-0 text-gold" />
+              Доступ к курсу заканчивается {formatDate(ending.d)}. Продлите его, чтобы не потерять уроки.
+            </span>
+            <Link href="/billing" className="font-medium text-clay no-underline hover:underline">
+              Продлить
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Приветствие */}
@@ -42,28 +66,41 @@ export default function DashboardPage() {
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-white/75 sm:text-base">
             Курс по финансовой грамотности: 6 модулей от финансового мышления до
-            собственной стратегии независимости. Проходите уроки по порядку — каждый
-            следующий опирается на предыдущий.
+            собственной стратегии независимости. Уроки открываются по порядку: отметьте
+            урок пройденным — откроется следующий.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            {firstLesson ? (
+            {current ? (
               <Link
-                href={`/lessons/${firstLesson.id}`}
+                href={`/lessons/${current.id}`}
                 className="inline-flex h-12 items-center gap-2 rounded-full bg-gold px-6 text-sm font-semibold text-[#0f1e3d] no-underline transition-transform hover:-translate-y-px"
               >
                 <PlayCircle className="h-4 w-4" />
-                Начать обучение
+                {doneLessons > 0 ? "Продолжить обучение" : "Начать обучение"}
+              </Link>
+            ) : needsPayment ? (
+              <Link
+                href="/billing"
+                className="inline-flex h-12 items-center gap-2 rounded-full bg-gold px-6 text-sm font-semibold text-[#0f1e3d] no-underline transition-transform hover:-translate-y-px"
+              >
+                <Lock className="h-4 w-4" />
+                Открыть доступ к курсу
               </Link>
             ) : (
-              !isLoading && (
+              !isLoading &&
+              (totalLessons > 0 && doneLessons === totalLessons ? (
+                <span className="rounded-full border border-white/20 px-4 py-2 text-sm text-white/80">
+                  Вы прошли все уроки 🎉
+                </span>
+              ) : (
                 <span className="rounded-full border border-white/20 px-4 py-2 text-sm text-white/70">
                   Первые уроки скоро появятся
                 </span>
-              )
+              ))
             )}
-            {totalLessons > 0 && (
+            {totalLessons > 0 && !isAdmin && (
               <span className="text-sm text-white/60">
-                Доступно {totalLessons} {lessonsWord(totalLessons)}
+                Пройдено {doneLessons} из {totalLessons} {lessonsWord(totalLessons)}
               </span>
             )}
           </div>
@@ -92,9 +129,29 @@ export default function DashboardPage() {
               <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
                 {m.description}
               </p>
-              <div className="mt-auto flex items-center gap-1.5 pt-4 text-xs font-medium text-clay">
-                {m.lessons.length > 0 ? `${m.lessons.length} ${lessonsWord(m.lessons.length)}` : "Скоро"}
-                <ArrowRight className="h-3 w-3" />
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4 text-xs font-medium">
+                <span className="flex items-center gap-1.5 text-clay">
+                  {m.lessons.length === 0
+                    ? "Скоро"
+                    : isAdmin
+                      ? `${m.lessons.length} ${lessonsWord(m.lessons.length)}`
+                      : `Пройдено ${m.completed_count} из ${m.lessons.length}`}
+                  <ArrowRight className="h-3 w-3" />
+                </span>
+                {!isAdmin &&
+                  (m.access_until ? (
+                    m.lessons.length > 0 && m.completed_count === m.lessons.length ? (
+                      <span className="flex items-center gap-1 text-sage">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Пройден
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Доступ до {formatDate(m.access_until)}</span>
+                    )
+                  ) : (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Lock className="h-3.5 w-3.5" /> {formatMoney(m.price)}
+                    </span>
+                  ))}
               </div>
             </Link>
           ))}

@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 class PlanPublic(BaseModel):
@@ -50,3 +50,15 @@ class PaymentPublic(BaseModel):
     status: str
     provider: str
     created_at: datetime
+    payment_metadata: dict | None = Field(default=None, exclude=True)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def title(self) -> str:
+        """Что оплачено — для истории платежей."""
+        meta = self.payment_metadata or {}
+        if meta.get("product") == "course":
+            return "Весь курс"
+        if meta.get("product") == "module":
+            return f"Модуль {meta.get('module_position', '')}".strip()
+        return meta.get("plan_name") or "Оплата"

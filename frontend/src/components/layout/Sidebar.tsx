@@ -8,15 +8,16 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BookOpenCheck,
   ChevronDown,
-  FileText,
+  CreditCard,
+  GraduationCap,
   LayoutDashboard,
-  PlayCircle,
   Settings,
   ShieldCheck,
   Users,
 } from "lucide-react";
 
 import { courseApi } from "@/api/course";
+import { LessonIcon, isLocked } from "@/components/course/status";
 import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,8 @@ import type { CourseModule } from "@/types";
 
 const adminNav = [
   { href: "/admin/course", label: "Управление курсом", icon: BookOpenCheck },
-  { href: "/admin/users", label: "Ученики", icon: Users },
+  { href: "/admin/students", label: "Ученики и прогресс", icon: GraduationCap },
+  { href: "/admin/users", label: "Пользователи", icon: Users },
   { href: "/admin", label: "Сводка", icon: ShieldCheck, exact: true },
 ];
 
@@ -127,7 +129,6 @@ function ModuleItem({
           )}
           {module.lessons.map((lesson, i) => {
             const active = pathname === `/lessons/${lesson.id}`;
-            const Icon = lesson.has_video ? PlayCircle : FileText;
             return (
               <Link
                 key={lesson.id}
@@ -136,10 +137,17 @@ function ModuleItem({
                 className={cn(
                   "flex items-start gap-2 rounded-lg px-2 py-1.5 text-[13px] leading-snug no-underline transition-colors",
                   active ? "bg-white/[0.1] text-white" : "text-white/60 hover:bg-white/[0.05] hover:text-white",
-                  !lesson.is_published && "opacity-60",
+                  (!lesson.is_published || isLocked(lesson)) && "opacity-55",
                 )}
               >
-                <Icon className={cn("mt-px h-3.5 w-3.5 shrink-0", active && "text-gold")} />
+                <LessonIcon
+                  lesson={lesson}
+                  className={cn(
+                    "mt-px h-3.5 w-3.5 shrink-0",
+                    lesson.status === "completed" && "text-emerald-400",
+                    active && "text-gold",
+                  )}
+                />
                 <span className="min-w-0">
                   {i + 1}. {lesson.title}
                   {!lesson.is_published && (
@@ -188,6 +196,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
       ))}
 
       <div className="my-3 border-t border-white/10" />
+      <NavLink
+        href="/billing"
+        label="Оплата курса"
+        icon={CreditCard}
+        active={pathname.startsWith("/billing")}
+        onNavigate={onNavigate}
+      />
       <NavLink
         href="/settings"
         label="Настройки"

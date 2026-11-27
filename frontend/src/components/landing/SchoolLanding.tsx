@@ -33,7 +33,7 @@ const FALLBACK_PROGRAM: ProgramModule[] = [
 ];
 
 const STEPS = [
-  { icon: UserPlus, title: "Регистрируйтесь", text: "Минута на создание аккаунта — и все открытые уроки сразу доступны." },
+  { icon: UserPlus, title: "Регистрируйтесь", text: "Минута на создание аккаунта — и первый урок доступен бесплатно." },
   { icon: PlayCircle, title: "Смотрите видеоуроки", text: "Короткие уроки по шагам: от основ к стратегии. Смотрите с компьютера или телефона." },
   { icon: BookOpenCheck, title: "Применяйте на практике", text: "К урокам — материалы и задания, чтобы сразу навести порядок в своих финансах." },
 ];
@@ -238,7 +238,7 @@ function FinalCta() {
             Начните путь к независимости <span className="text-[var(--lx-gold)]">сегодня</span>
           </h2>
           <p className="relative mx-auto mt-5 max-w-[520px] text-[17px] leading-relaxed text-white/75">
-            Регистрация бесплатная — первые уроки доступны сразу после входа.
+            Регистрация бесплатная — первый урок доступен сразу после входа.
           </p>
           <div className="relative mt-9 flex justify-center">
             <PrimaryCta className="!bg-[var(--lx-gold)] !text-[var(--lx-navy)]" />

@@ -34,7 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ModuleSelect, Switch } from "@/components/course/form";
 import { adminCourseApi } from "@/api/course";
-import { errorMessage } from "@/lib/utils";
+import { errorMessage, formatMoney } from "@/lib/utils";
 import type { AdminCourseModule, Lesson } from "@/types";
 
 export default function AdminCoursePage() {
@@ -116,6 +116,8 @@ export default function AdminCoursePage() {
         </div>
       )}
 
+      <PricingCard />
+
       {isLoading &&
         Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
 
@@ -127,7 +129,12 @@ export default function AdminCoursePage() {
                 {m.position}
               </span>
               <div className="min-w-0">
-                <h2 className="font-display text-[17px] leading-snug">{m.title}</h2>
+                <h2 className="font-display text-[17px] leading-snug">
+                  {m.title}
+                  <span className="ml-2 align-middle font-body text-sm font-normal text-muted-foreground">
+                    · {formatMoney(m.price)}
+                  </span>
+                </h2>
                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                   {m.description || "Без описания"}
                 </p>
@@ -358,16 +365,21 @@ function EditModuleDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState({ title: "", description: "" });
+  const [form, setForm] = useState({ title: "", description: "", price: "" });
   const [openedFor, setOpenedFor] = useState<string | null>(null);
   if (mod && openedFor !== mod.id) {
     setOpenedFor(mod.id);
-    setForm({ title: mod.title, description: mod.description });
+    setForm({ title: mod.title, description: mod.description, price: String(Number(mod.price)) });
   }
   if (!mod && openedFor !== null) setOpenedFor(null);
 
   const save = useMutation({
-    mutationFn: () => adminCourseApi.updateModule(mod!.id, form),
+    mutationFn: () =>
+      adminCourseApi.updateModule(mod!.id, {
+        title: form.title,
+        description: form.description,
+        price: Number(form.price),
+      }),
     onSuccess: () => {
       toast.success("Модуль сохранён");
       onSaved();
@@ -387,7 +399,7 @@ function EditModuleDialog({
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (form.title.trim()) save.mutate();
+            if (form.title.trim() && Number(form.price) >= 1) save.mutate();
           }}
         >
           <div className="space-y-1.5">
@@ -409,16 +421,109 @@ function EditModuleDialog({
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="em-price">Цена модуля, ₽</Label>
+            <Input
+              id="em-price"
+              type="number"
+              min={1}
+              step={1}
+              required
+              value={form.price}
+              onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Цена при покупке этого модуля отдельно. Модули покупаются по порядку.
+            </p>
+          </div>
           <DialogFooter className="gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Отмена
             </Button>
-            <Button type="submit" disabled={save.isPending || !form.title.trim()}>
+            <Button type="submit" disabled={save.isPending || !form.title.trim() || Number(form.price) < 1}>
               {save.isPending ? "Сохраняем…" : "Сохранить"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Цена всего курса и срок доступа. Цены модулей — в карточке каждого модуля. */
+function PricingCard() {
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ["admin-course-settings"], queryFn: () => adminCourseApi.settings() });
+  const [form, setForm] = useState<{ full_price: string; access_days: string } | null>(null);
+  if (data && form === null) {
+    setForm({ full_price: String(Number(data.full_price)), access_days: String(data.access_days) });
+  }
+
+  const save = useMutation({
+    mutationFn: () =>
+      adminCourseApi.updateSettings({
+        full_price: Number(form!.full_price),
+        access_days: Number(form!.access_days),
+      }),
+    onSuccess: () => {
+      toast.success("Цены сохранены");
+      qc.invalidateQueries({ queryKey: ["admin-course-settings"] });
+    },
+    onError: (e) => toast.error(errorMessage(e, "Не удалось сохранить")),
+  });
+
+  const valid = form && Number(form.full_price) >= 1 && Number(form.access_days) >= 1;
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5">
+      <h2 className="font-display text-[17px]">Стоимость курса</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Ученик покупает весь курс сразу или модули по одному, по порядку. Цену модуля меняйте кнопкой
+        «Модуль» в карточке модуля.
+      </p>
+      {!form ? (
+        <Skeleton className="mt-4 h-16" />
+      ) : (
+        <form
+          className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (valid) save.mutate();
+          }}
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="cs-price">Весь курс, ₽</Label>
+            <Input
+              id="cs-price"
+              type="number"
+              min={1}
+              step={1}
+              value={form.full_price}
+              onChange={(e) => setForm({ ...form, full_price: e.target.value })}
+              className="sm:w-44"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cs-days">Срок доступа, дней</Label>
+            <Input
+              id="cs-days"
+              type="number"
+              min={1}
+              max={3650}
+              step={1}
+              value={form.access_days}
+              onChange={(e) => setForm({ ...form, access_days: e.target.value })}
+              className="sm:w-44"
+            />
+          </div>
+          <Button type="submit" disabled={!valid || save.isPending}>
+            {save.isPending ? "Сохраняем…" : "Сохранить"}
+          </Button>
+        </form>
+      )}
+      <p className="mt-3 text-xs text-muted-foreground">
+        Срок действует и для курса, и для отдельных модулей. Уже оплаченные доступы не меняются.
+      </p>
+    </section>
   );
 }

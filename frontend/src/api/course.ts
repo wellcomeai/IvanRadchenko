@@ -3,6 +3,11 @@ import axios from "axios";
 import { apiClient } from "./client";
 import type {
   AdminCourseModule,
+  CourseSettings,
+  PublicPricing,
+  Shop,
+  StudentDetail,
+  StudentRow,
   CourseModule,
   Lesson,
   LessonMaterial,
@@ -26,6 +31,33 @@ export const courseApi = {
 
   async lesson(id: string): Promise<LessonView> {
     const r = await apiClient.get(`/api/v1/course/lessons/${id}`);
+    return r.data;
+  },
+
+  /** Кнопка «Урок пройден». */
+  async complete(
+    id: string,
+  ): Promise<{ completed_at: string; next_lesson_id: string | null; next_lesson_status: string | null }> {
+    const r = await apiClient.post(`/api/v1/course/lessons/${id}/complete`);
+    return r.data;
+  },
+
+  /** Цены без входа (оферта). */
+  async pricing(): Promise<PublicPricing> {
+    const r = await apiClient.get("/api/v1/course/pricing");
+    return r.data;
+  },
+
+  async shop(): Promise<Shop> {
+    const r = await apiClient.get("/api/v1/course/shop");
+    return r.data;
+  },
+
+  async checkout(product: "course" | "module", moduleId?: string): Promise<{ payment_url: string }> {
+    const r = await apiClient.post("/api/v1/course/checkout", {
+      product,
+      module_id: moduleId ?? null,
+    });
     return r.data;
   },
 };
@@ -54,7 +86,43 @@ export const adminCourseApi = {
     return r.data;
   },
 
-  async updateModule(id: string, data: { title?: string; description?: string }): Promise<void> {
+  async settings(): Promise<CourseSettings> {
+    const r = await apiClient.get("/api/v1/admin/course/settings");
+    return r.data;
+  },
+
+  async updateSettings(data: { full_price?: number; access_days?: number }): Promise<CourseSettings> {
+    const r = await apiClient.patch("/api/v1/admin/course/settings", data);
+    return r.data;
+  },
+
+  async students(params: { search?: string; page?: number } = {}): Promise<StudentRow[]> {
+    const r = await apiClient.get("/api/v1/admin/course/students", { params });
+    return r.data;
+  },
+
+  async student(userId: string): Promise<StudentDetail> {
+    const r = await apiClient.get(`/api/v1/admin/course/students/${userId}`);
+    return r.data;
+  },
+
+  /** Выдать доступ вручную: moduleId = null — весь курс. */
+  async grant(userId: string, moduleId: string | null, days?: number): Promise<void> {
+    await apiClient.post("/api/v1/admin/course/access", {
+      user_id: userId,
+      module_id: moduleId,
+      days: days ?? null,
+    });
+  },
+
+  async revoke(accessId: string): Promise<void> {
+    await apiClient.delete(`/api/v1/admin/course/access/${accessId}`);
+  },
+
+  async updateModule(
+    id: string,
+    data: { title?: string; description?: string; price?: number },
+  ): Promise<void> {
     await apiClient.patch(`/api/v1/admin/course/modules/${id}`, data);
   },
 

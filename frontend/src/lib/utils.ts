@@ -11,6 +11,8 @@ export function formatMoney(amount: number | string, currency = "RUB"): string {
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
     currency,
+    // Целые суммы без копеек: «25 800 ₽».
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(value);
 }

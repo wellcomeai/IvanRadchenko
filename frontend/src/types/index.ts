@@ -80,6 +80,8 @@ export interface Payment {
   status: "pending" | "success" | "failed" | "refunded";
   provider: "robokassa" | "stripe";
   created_at: string;
+  /** Что оплачено: «Весь курс», «Модуль 2». */
+  title: string;
 }
 
 export interface ReferralStats {
@@ -152,6 +154,9 @@ export interface LessonMaterial {
   url: string | null;
 }
 
+/** completed — пройден; available — открыт; locked_sequence — сначала предыдущие; locked_payment — не оплачен. */
+export type LessonStatus = "completed" | "available" | "locked_sequence" | "locked_payment";
+
 export interface LessonBrief {
   id: UUID;
   module_id: UUID;
@@ -159,6 +164,8 @@ export interface LessonBrief {
   position: number;
   is_published: boolean;
   has_video: boolean;
+  status: LessonStatus;
+  is_free: boolean;
 }
 
 export interface Lesson extends LessonBrief {
@@ -173,6 +180,7 @@ export interface LessonView extends Lesson {
   module_position: number;
   prev_lesson_id: UUID | null;
   next_lesson_id: UUID | null;
+  completed_at: string | null;
 }
 
 export interface CourseModule {
@@ -180,7 +188,11 @@ export interface CourseModule {
   position: number;
   title: string;
   description: string;
+  price: string;
   lessons: LessonBrief[];
+  /** До какого числа модуль доступен; null — не оплачен. */
+  access_until: string | null;
+  completed_count: number;
 }
 
 export interface AdminCourseModule extends Omit<CourseModule, "lessons"> {
@@ -197,4 +209,81 @@ export interface ProgramModule {
 export interface StorageStatus {
   enabled: boolean;
   bucket: string | null;
+}
+
+// ---------- Продажа курса ----------
+
+export type BuyBlock = "owned" | "need_previous" | "included_in_course";
+
+export interface ShopModule {
+  id: UUID;
+  position: number;
+  title: string;
+  price: string;
+  access_until: string | null;
+  can_buy: boolean;
+  blocked_by: BuyBlock | null;
+}
+
+export interface Shop {
+  access_days: number;
+  full_course: { price: string; access_until: string | null; can_buy: boolean };
+  modules: ShopModule[];
+}
+
+export interface PublicPricing {
+  full_price: string;
+  access_days: number;
+  modules: ShopModule[];
+}
+
+export interface CourseSettings {
+  full_price: string;
+  access_days: number;
+}
+
+export interface CourseAccess {
+  id: UUID;
+  module_id: UUID | null;
+  module_position: number | null;
+  starts_at: string;
+  expires_at: string;
+  source: "payment" | "admin" | string;
+  revoked_at: string | null;
+  is_active: boolean;
+}
+
+export interface StudentRow {
+  id: UUID;
+  email: string;
+  name: string | null;
+  created_at: string;
+  full_course_until: string | null;
+  modules_paid: number[];
+  completed_lessons: number;
+  total_lessons: number;
+  last_lesson_title: string | null;
+  last_activity_at: string | null;
+}
+
+export interface StudentLesson {
+  id: UUID;
+  title: string;
+  position: number;
+  status: LessonStatus;
+  first_opened_at: string | null;
+  last_opened_at: string | null;
+  completed_at: string | null;
+}
+
+export interface StudentDetail {
+  row: StudentRow;
+  accesses: CourseAccess[];
+  modules: {
+    id: UUID;
+    position: number;
+    title: string;
+    access_until: string | null;
+    lessons: StudentLesson[];
+  }[];
 }

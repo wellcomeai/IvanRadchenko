@@ -9,10 +9,12 @@
 
 - `models.py` — `CourseModule`, `Lesson`, `LessonMaterial`
 - `schemas.py` — Pydantic-схемы (ученик / админ / загрузка)
-- `service.py` — бизнес-логика
+- `service.py` — бизнес-логика (контент курса)
+- `access.py` — продажа, доступ учеников, пошаговое прохождение, админка учеников
 - `storage.py` — работа с S3 (boto3, подписанные ссылки, CORS бакета)
 - Роутер: `api/v1/internal/course.py` (`router` для учеников, `admin_router` для админа)
-- Миграция: `alembic/versions/0011_course.py` (таблицы + 6 стартовых модулей)
+- Миграции: `0011_course.py` (таблицы + 6 стартовых модулей),
+  `0012_course_access.py` (цены, доступы, прогресс)
 
 ## Модель данных
 
@@ -23,13 +25,40 @@
 - `course_lesson_materials` — `kind` (`video` | `file`), `title`, `filename`,
   `content_type`, `size_bytes`, `storage_key` (путь в S3), `upload_id`
   (идёт multipart-загрузка), `is_uploaded`.
+- `course_modules.price` — цена модуля при покупке отдельно (по умолчанию 4300).
+- `course_settings` (одна строка id=1) — `full_price` (весь курс, 25800), `access_days` (365).
+- `course_access` — доступ ученика: `module_id = NULL` — весь курс, иначе модуль;
+  `starts_at/expires_at`, `source` (`payment` | `admin`), `payment_id`, `revoked_at`.
+  Продление: новый доступ начинается после окончания текущего такого же.
+- `course_lesson_progress` — `first_opened_at`, `last_opened_at`, `completed_at`
+  (кнопка «Урок пройден»). Админ в прогресс не пишется.
+
+## Правила доступа (`access.py`)
+
+- Первый опубликованный урок курса бесплатный, пробного периода нет.
+- Урок открыт, если его модуль оплачен (или урок бесплатный) **и** все предыдущие
+  опубликованные уроки курса пройдены — в том числе через границу модулей.
+  Статусы: `completed`, `available`, `locked_sequence`, `locked_payment`.
+- Закрытый урок → `403 {"detail": {"code": "locked_payment" | "locked_sequence"}}`.
+- Модуль N можно купить, только если раньше был доступ к N−1 (или к курсу).
+  Купить/продлить можно, если доступа нет или до конца ≤ 30 дней.
+- Админ видит всё и может выдать/отозвать доступ вручную.
 
 ## Endpoints
 
-Ученик (JWT, любой вошедший — пока обучение бесплатное):
+Ученик (JWT):
 - `GET /api/v1/course/program` — программа для лендинга, **без входа**
-- `GET /api/v1/course/modules` — модули и уроки для сайдбара
-- `GET /api/v1/course/lessons/{id}` — урок + ссылки на видео/файлы + соседние уроки
+- `GET /api/v1/course/pricing` — цены для оферты, **без входа**
+- `GET /api/v1/course/modules` — модули, уроки и статус каждого урока
+- `GET /api/v1/course/lessons/{id}` — урок + ссылки на видео/файлы (отмечает «открыт»)
+- `POST /api/v1/course/lessons/{id}/complete` — «Урок пройден»
+- `GET /api/v1/course/shop` — что можно купить
+- `POST /api/v1/course/checkout {product: course|module, module_id}` → `payment_url`
+
+Оплата: `Payment.payment_metadata = {"product": "course"|"module", "module_id", "access_days"}`.
+Webhook Робокассы (`api/v1/public/webhooks.py`) проверяет подпись и сумму и для таких
+платежей вызывает `access.activate_payment` (идемпотентно по `payment_id`).
+В Робокассу передаётся чек 54-ФЗ (`Receipt`, см. `billing/robokassa.py`).
 
 Админ (`/api/v1/admin/course/*`, role=admin):
 - `GET storage` — подключено ли S3
@@ -38,6 +67,9 @@
 - `POST lessons/{id}/uploads` — начать загрузку → ссылки на части
 - `POST materials/{id}/complete` — собрать части в файл
 - `PATCH|DELETE materials/{id}`
+- `GET|PATCH settings` — цена курса и срок доступа; цена модуля — `PATCH modules/{id} {price}`
+- `GET students?search=&page=`, `GET students/{user_id}` — ученики и прогресс
+- `POST access {user_id, module_id|null, days?}`, `DELETE access/{id}` — ручной доступ
 
 ## Загрузка видео (важно)
 
@@ -66,5 +98,4 @@ S3-совместимые хранилища понимают не всегда.
 
 ## Дальше
 
-- Доступ по оплате: заменить `CurrentUser` на `ActiveSubscription` в ученических роутах.
 - Проверка заданий нейросетью: добавить модели заданий/ответов, привязанные к `Lesson`.

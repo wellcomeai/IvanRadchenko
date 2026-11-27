@@ -20,8 +20,15 @@ export const SITE = {
   description: "онлайн-курс по финансовой грамотности «Школа Независимости»",
 } as const;
 
-export const COURSE_PRICE = 3000;
-export const COURSE_PRICE_LABEL = "3 000 ₽";
+/**
+ * Цены по умолчанию — показываются, пока не загрузились актуальные из админки
+ * (GET /api/v1/course/pricing). Менять цены нужно в «Управлении курсом».
+ */
+export const DEFAULT_PRICING = {
+  fullPrice: 25800,
+  modulePrice: 4300,
+  accessDays: 365,
+} as const;
 
 /** Дата редакции юридических документов. */
-export const LEGAL_UPDATED_AT = "26 ноября 2026 г.";
+export const LEGAL_UPDATED_AT = "27 ноября 2026 г.";

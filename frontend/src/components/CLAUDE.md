@@ -7,7 +7,9 @@
 - `layout/` — Sidebar, Header, Footer, PublicHeader.
 - `landing/` — секции лендинга (Hero, Features, Pricing, Testimonials,
   FAQ, CTA).
-- `billing/` — TrialBanner, PlanCard, PaymentHistory.
+- `billing/` — PaymentHistory (история оплат курса).
+- `course/status.tsx` — иконка и подсказка статуса урока; `course/AccessBadge.tsx` — что оплачено у ученика (админка).
+- `legal/` — `LegalPage`, `CoursePrices` (актуальные цены в оферте из `/course/pricing`).
 - `referrals/` — ReferralWidget, PayoutHistory.
 - `AuthGuard.tsx` — обёртка для защищённых страниц (требует логин,
   опционально требует admin).

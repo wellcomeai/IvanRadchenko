@@ -24,11 +24,18 @@
 
 ## Бизнес-логика
 
-### Trial система
+**Курс продаётся не через Plan/Subscription**, а через `modules/course/access.py`
+(весь курс или модули по порядку, доступ на год). Plan/Subscription остались от
+шаблона: старые платежи по тарифам webhook обрабатывает как раньше.
 
-- При регистрации: `Subscription(status=trial, current_period_end=now + TRIAL_DAYS)`
-- Зависимость `ActiveSubscription` пропускает trial если `current_period_end > now()`,
-  иначе 402 + `{redirect: "/billing"}`.
+Пробного периода нет: при регистрации подписка не создаётся (первый урок бесплатный).
+
+### Чек 54-ФЗ
+
+`robokassa.build_payment_url(..., receipt_item=...)` добавляет параметр `Receipt`
+(одна позиция «услуга», полная оплата) и включает его в подпись
+`MerchantLogin:OutSum:InvId:Receipt:Password1`. Настройки: `ROBOKASSA_RECEIPT_ENABLED`
+(true), `ROBOKASSA_RECEIPT_TAX` (none), `ROBOKASSA_RECEIPT_SNO` (пусто — из магазина).
 
 ### Платёж
 
@@ -36,7 +43,8 @@
 2. Backend создаёт `Payment(status=pending)` и возвращает `payment_url`
 3. Юзер платит на стороне провайдера
 4. Провайдер шлёт webhook (`/api/v1/webhooks/robokassa`)
-5. Webhook: проверка подписи → `activate_paid_subscription` → notification + email
+5. Webhook: проверка подписи и суммы → `course.access.activate_payment` (курс/модуль)
+   или `activate_paid_subscription` (старые тарифы)
 6. `referrals.process_payment_for_referral` создаёт payout если есть реферер
 
 ## Endpoints
@@ -67,4 +75,4 @@ POST /api/v1/billing/cancel
 
 - Webhook сигнатура с `OutSum/InvId/SignatureValue` — формат Робокассы.
 - Поле `payment.payment_metadata['plan_id']` — используется в
-  `activate_paid_subscription`.
+  `activate_paid_subscription`; `payment_metadata['product']` — в оплате курса.
