@@ -4,15 +4,26 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
 from database import get_db
 from dependencies import CurrentUser, require_admin
-from modules.course import service
+from modules.course import access, service
 from modules.course.schemas import (
+    AccessGrant,
+    AccessPublic,
     AdminModulePublic,
+    CheckoutRequest,
+    CheckoutResponse,
+    CourseSettingsPublic,
+    CourseSettingsUpdate,
+    LessonCompleteResult,
+    PublicPricing,
+    Shop,
+    StudentDetail,
+    StudentRow,
     LessonCreate,
     LessonPublic,
     LessonReorder,
@@ -40,14 +51,45 @@ async def program(db: Db):
     return await service.program(db)
 
 
+@router.get("/pricing", response_model=PublicPricing)
+async def pricing(db: Db):
+    """Цены курса и модулей для оферты и лендинга — без входа."""
+    return await access.public_pricing(db)
+
+
 @router.get("/modules", response_model=list[ModulePublic])
 async def list_modules(user: CurrentUser, db: Db):
-    return await service.list_modules(db, include_drafts=user.role == "admin")
+    return await service.list_modules(db, user)
 
 
 @router.get("/lessons/{lesson_id}", response_model=LessonView)
 async def get_lesson(lesson_id: UUID, user: CurrentUser, db: Db):
-    return await service.lesson_view(db, lesson_id, is_admin=user.role == "admin")
+    return await service.lesson_view(db, lesson_id, user)
+
+
+@router.post("/lessons/{lesson_id}/complete", response_model=LessonCompleteResult)
+async def complete_lesson(lesson_id: UUID, user: CurrentUser, db: Db):
+    """Кнопка «Урок пройден»: открывает следующий урок."""
+    completed_at, next_id, next_status = await access.complete_lesson(db, user, lesson_id)
+    return LessonCompleteResult(
+        completed_at=completed_at, next_lesson_id=next_id, next_lesson_status=next_status
+    )
+
+
+@router.get("/shop", response_model=Shop)
+async def shop(user: CurrentUser, db: Db):
+    """Что можно купить: весь курс или модули по порядку."""
+    return await access.shop(db, user)
+
+
+@router.post("/checkout", response_model=CheckoutResponse)
+async def checkout(payload: CheckoutRequest, user: CurrentUser, db: Db):
+    if payload.product == "module" and payload.module_id is None:
+        raise HTTPException(status_code=400, detail="Не указан модуль")
+    url, payment = await access.create_checkout(
+        db, user, payload.product, payload.module_id
+    )
+    return CheckoutResponse(payment_url=url, payment_id=payment.id)
 
 
 admin_router = APIRouter(
@@ -121,3 +163,50 @@ async def update_material(material_id: UUID, payload: MaterialUpdate, db: Db):
 @admin_router.delete("/materials/{material_id}", status_code=204)
 async def delete_material(material_id: UUID, db: Db):
     await service.delete_material(db, material_id)
+
+
+# ---------- Админ: цены, доступы, ученики ----------
+
+
+@admin_router.get("/settings", response_model=CourseSettingsPublic)
+async def get_settings(db: Db):
+    return await access.get_settings(db)
+
+
+@admin_router.patch("/settings", response_model=CourseSettingsPublic)
+async def update_settings(payload: CourseSettingsUpdate, db: Db):
+    return await access.update_settings(db, payload)
+
+
+@admin_router.get("/students", response_model=list[StudentRow])
+async def students(
+    db: Db,
+    search: str | None = Query(default=None, max_length=255),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=50, ge=1, le=200),
+):
+    return await access.admin_students(db, search=search, page=page, limit=limit)
+
+
+@admin_router.get("/students/{user_id}", response_model=StudentDetail)
+async def student(user_id: UUID, db: Db):
+    return await access.admin_student(db, user_id)
+
+
+@admin_router.post("/access", response_model=AccessPublic, status_code=201)
+async def grant_access(payload: AccessGrant, db: Db):
+    """Выдать доступ вручную: весь курс (module_id=null) или модуль."""
+    a = await access.admin_grant(db, payload)
+    return AccessPublic(
+        id=a.id,
+        module_id=a.module_id,
+        starts_at=a.starts_at,
+        expires_at=a.expires_at,
+        source=a.source,
+        is_active=True,
+    )
+
+
+@admin_router.delete("/access/{access_id}", status_code=204)
+async def revoke_access(access_id: UUID, db: Db):
+    await access.admin_revoke(db, access_id)

@@ -12,6 +12,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from modules.auth.models import User
+from modules.course import access as course_access
 from modules.course import storage
 from modules.course.models import CourseModule, Lesson, LessonMaterial
 from modules.course.schemas import (
@@ -141,44 +143,59 @@ async def program(db: AsyncSession) -> list[ProgramModule]:
     ]
 
 
-async def list_modules(db: AsyncSession, *, include_drafts: bool) -> list[ModulePublic]:
-    """Модули с уроками для сайдбара. Черновики видит только админ."""
-    return [
-        ModulePublic(
-            id=m.id,
-            position=m.position,
-            title=m.title,
-            description=m.description,
-            lessons=[
-                _brief(lesson)
-                for lesson in m.lessons
-                if lesson.is_published or include_drafts
-            ],
+async def list_modules(db: AsyncSession, user: User) -> list[ModulePublic]:
+    """Модули с уроками и статусом каждого урока для ученика.
+
+    Закрытые уроки тоже в списке (название видно, открыть нельзя).
+    Черновики видит только админ.
+    """
+    state = await course_access.course_state(db, user)
+    by_module: dict[UUID, list[LessonBrief]] = {}
+    for m, lesson in state.ordered:
+        brief = _brief(lesson)
+        brief.status = state.lesson_status[lesson.id]
+        brief.is_free = lesson.id == state.free_lesson_id
+        by_module.setdefault(m.id, []).append(brief)
+    out = []
+    for m in state.modules:
+        lessons = by_module.get(m.id, [])
+        out.append(
+            ModulePublic(
+                id=m.id,
+                position=m.position,
+                title=m.title,
+                description=m.description,
+                price=m.price,
+                lessons=lessons,
+                access_until=state.module_until.get(m.id),
+                completed_count=sum(1 for b in lessons if b.status == "completed"),
+            )
         )
-        for m in await _modules_tree(db)
-    ]
+    return out
 
 
-async def lesson_view(db: AsyncSession, lesson_id: UUID, *, is_admin: bool) -> LessonView:
-    modules = await _modules_tree(db)
-    ordered = [
-        (m, lesson)
-        for m in modules
-        for lesson in m.lessons
-        if lesson.is_published or is_admin
-    ]
-    idx = next((i for i, (_, l) in enumerate(ordered) if l.id == lesson_id), None)
-    if idx is None:
-        raise HTTPException(status_code=404, detail="Урок не найден")
+async def lesson_view(db: AsyncSession, lesson_id: UUID, user: User) -> LessonView:
+    """Урок для ученика. Закрытый урок → 403 (не оплачен / не пройдены предыдущие)."""
+    state = await course_access.course_state(db, user)
+    status = course_access.lesson_gate(state, lesson_id)
+    ordered = state.ordered
+    idx = next(i for i, (_, l) in enumerate(ordered) if l.id == lesson_id)
     module, lesson = ordered[idx]
     base = _lesson(lesson, with_urls=True, uploaded_only=True)
-    return LessonView(
+    base.status = status
+    base.is_free = lesson.id == state.free_lesson_id
+    done = state.progress.get(lesson_id)
+    view = LessonView(
         **base.model_dump(),
         module_title=module.title,
         module_position=module.position,
         prev_lesson_id=ordered[idx - 1][1].id if idx > 0 else None,
         next_lesson_id=ordered[idx + 1][1].id if idx + 1 < len(ordered) else None,
+        completed_at=done.completed_at if done else None,
     )
+    # После сборки ответа: mark_opened делает commit.
+    await course_access.mark_opened(db, user, lesson_id)
+    return view
 
 
 # ---------- Админ: модули ----------
@@ -191,6 +208,7 @@ async def admin_list_modules(db: AsyncSession) -> list[AdminModulePublic]:
             position=m.position,
             title=m.title,
             description=m.description,
+            price=m.price,
             lessons=[
                 _lesson(lesson, with_urls=False, uploaded_only=False)
                 for lesson in m.lessons
@@ -206,6 +224,8 @@ async def update_module(db: AsyncSession, module_id: UUID, payload: ModuleUpdate
         module.title = payload.title.strip()
     if payload.description is not None:
         module.description = payload.description.strip()
+    if payload.price is not None:
+        module.price = payload.price
     await db.commit()
 
 

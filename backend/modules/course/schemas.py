@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 MaterialKind = Literal["video", "file"]
+# Состояние урока для ученика:
+# completed — пройден; available — открыт; locked_sequence — сначала пройти предыдущие;
+# locked_payment — модуль не оплачен.
+LessonStatus = Literal["completed", "available", "locked_sequence", "locked_payment"]
 
 
 # ---------- Материалы ----------
@@ -87,6 +92,9 @@ class LessonBrief(BaseModel):
     position: int
     is_published: bool
     has_video: bool = False
+    # Для ученика (у админа всегда available/completed).
+    status: LessonStatus = "available"
+    is_free: bool = False
 
 
 class LessonPublic(LessonBrief):
@@ -103,6 +111,13 @@ class LessonView(LessonPublic):
     module_position: int
     prev_lesson_id: UUID | None = None
     next_lesson_id: UUID | None = None
+    completed_at: datetime | None = None
+
+
+class LessonCompleteResult(BaseModel):
+    completed_at: datetime
+    next_lesson_id: UUID | None = None
+    next_lesson_status: LessonStatus | None = None
 
 
 # ---------- Модули ----------
@@ -111,6 +126,7 @@ class LessonView(LessonPublic):
 class ModuleUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=10_000)
+    price: Decimal | None = Field(default=None, ge=1, le=10_000_000)
 
 
 class ModulePublic(BaseModel):
@@ -120,7 +136,11 @@ class ModulePublic(BaseModel):
     position: int
     title: str
     description: str
+    price: Decimal = Decimal(0)
     lessons: list[LessonBrief] = []
+    # Для ученика: до какого числа модуль доступен (None — не оплачен).
+    access_until: datetime | None = None
+    completed_count: int = 0
 
 
 class AdminModulePublic(ModulePublic):
@@ -139,3 +159,123 @@ class ProgramModule(BaseModel):
 class StorageStatus(BaseModel):
     enabled: bool
     bucket: str | None = None
+
+
+# ---------- Продажа и доступ ----------
+
+BuyBlock = Literal["owned", "need_previous", "included_in_course"]
+
+
+class ShopModule(BaseModel):
+    id: UUID
+    position: int
+    title: str
+    price: Decimal
+    access_until: datetime | None = None
+    can_buy: bool
+    # Почему нельзя купить: уже оплачен / сначала предыдущий / уже входит в курс.
+    blocked_by: BuyBlock | None = None
+
+
+class ShopFullCourse(BaseModel):
+    price: Decimal
+    access_until: datetime | None = None
+    can_buy: bool
+
+
+class Shop(BaseModel):
+    """Что ученик может купить и что у него уже есть."""
+
+    access_days: int
+    full_course: ShopFullCourse
+    modules: list[ShopModule]
+
+
+class PublicPricing(BaseModel):
+    """Цены для оферты и лендинга (без входа)."""
+
+    full_price: Decimal
+    access_days: int
+    modules: list[ShopModule]
+
+
+class CheckoutRequest(BaseModel):
+    product: Literal["course", "module"]
+    module_id: UUID | None = None
+
+
+class CheckoutResponse(BaseModel):
+    payment_url: str
+    payment_id: UUID
+
+
+class CourseSettingsPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    full_price: Decimal
+    access_days: int
+
+
+class CourseSettingsUpdate(BaseModel):
+    full_price: Decimal | None = Field(default=None, ge=1, le=10_000_000)
+    access_days: int | None = Field(default=None, ge=1, le=3650)
+
+
+# ---------- Админ: ученики ----------
+
+
+class AccessPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    module_id: UUID | None = None
+    module_position: int | None = None
+    starts_at: datetime
+    expires_at: datetime
+    source: str
+    revoked_at: datetime | None = None
+    is_active: bool = False
+
+
+class AccessGrant(BaseModel):
+    user_id: UUID
+    module_id: UUID | None = None  # None — весь курс
+    days: int | None = Field(default=None, ge=1, le=3650)
+
+
+class StudentRow(BaseModel):
+    id: UUID
+    email: str
+    name: str | None = None
+    created_at: datetime
+    full_course_until: datetime | None = None
+    # Номера модулей с активным доступом (без учёта полного курса).
+    modules_paid: list[int] = []
+    completed_lessons: int
+    total_lessons: int
+    last_lesson_title: str | None = None
+    last_activity_at: datetime | None = None
+
+
+class StudentLesson(BaseModel):
+    id: UUID
+    title: str
+    position: int
+    status: LessonStatus
+    first_opened_at: datetime | None = None
+    last_opened_at: datetime | None = None
+    completed_at: datetime | None = None
+
+
+class StudentModule(BaseModel):
+    id: UUID
+    position: int
+    title: str
+    access_until: datetime | None = None
+    lessons: list[StudentLesson]
+
+
+class StudentDetail(BaseModel):
+    row: StudentRow
+    accesses: list[AccessPublic]
+    modules: list[StudentModule]

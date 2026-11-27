@@ -64,6 +64,14 @@ class Settings(BaseSettings):
     robokassa_password2: str = Field(default="")
     # Только боевой режим: тестовые пароли Робокассы в проекте не используются.
     robokassa_test_mode: bool = Field(default=False)
+    # Чек по 54-ФЗ (Робочеки / фискализация в Робокассе): передаём состав покупки.
+    # Если в магазине фискализация не подключена и Робокасса ругается — false.
+    robokassa_receipt_enabled: bool = Field(default=True)
+    # Ставка НДС в чеке: none (без НДС, для УСН/НПД), vat0, vat10, vat20 ...
+    robokassa_receipt_tax: str = Field(default="none")
+    # Система налогообложения (usn_income, usn_income_outcome, osn, patent, npd).
+    # Пусто — берётся из настроек магазина в Робокассе.
+    robokassa_receipt_sno: str = Field(default="")
 
     # === Stripe ===
     stripe_secret_key: str = Field(default="")

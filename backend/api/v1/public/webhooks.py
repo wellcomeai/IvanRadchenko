@@ -1,6 +1,7 @@
 """Webhooks от платёжных провайдеров."""
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
@@ -13,6 +14,7 @@ from modules.billing.models import Payment, PaymentStatus
 from modules.email import service as email_service
 from modules.referrals import service as ref_service
 from modules.billing.robokassa import verify_result_signature
+from modules.course import access as course_access
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
@@ -42,8 +44,19 @@ async def robokassa_webhook(
     if payment.status == PaymentStatus.SUCCESS:
         return f"OK{InvId}"
 
+    # Сумма в уведомлении должна совпадать с суммой счёта.
+    try:
+        paid = Decimal(OutSum)
+    except (InvalidOperation, ValueError):
+        raise HTTPException(status_code=400, detail="Invalid OutSum")
+    if paid < Decimal(payment.amount):
+        raise HTTPException(status_code=400, detail="Amount mismatch")
+
     payment.status = PaymentStatus.SUCCESS
-    await billing_service.activate_paid_subscription(db, payment)
+    if course_access.is_course_payment(payment):
+        await course_access.activate_payment(db, payment)
+    else:
+        await billing_service.activate_paid_subscription(db, payment)
 
     payout = await ref_service.process_payment_for_referral(db, payment)
 

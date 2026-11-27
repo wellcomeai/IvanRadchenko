@@ -24,7 +24,6 @@ from modules.auth.utils import (
     hash_password,
     verify_password,
 )
-from modules.billing.models import Subscription, SubscriptionStatus
 
 
 async def register_user(
@@ -45,20 +44,13 @@ async def register_user(
     user = User(
         email=payload.email,
         hashed_password=await hash_password(payload.password),
-        trial_ends_at=now + timedelta(days=settings.trial_days),
     )
     db.add(user)
     await db.flush()
 
     db.add(UserProfile(user_id=user.id, first_name=payload.first_name, last_name=payload.last_name))
-    db.add(
-        Subscription(
-            user_id=user.id,
-            status=SubscriptionStatus.TRIAL,
-            current_period_start=now,
-            current_period_end=now + timedelta(days=settings.trial_days),
-        )
-    )
+    # Пробного периода нет: доступ к курсу — по оплате (modules/course/access.py),
+    # первый урок бесплатный.
 
     code: str | None = None
     if with_code:
